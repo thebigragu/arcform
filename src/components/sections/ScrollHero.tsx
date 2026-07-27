@@ -42,7 +42,7 @@ function MobileScrollCue({
 
   return (
     <motion.div
-      className="pointer-events-none absolute bottom-[5.5rem] right-6 z-40 flex flex-col items-center gap-3"
+      className="pointer-events-none absolute bottom-5 right-5 z-40 flex flex-col items-center gap-3"
       style={{ opacity }}
       aria-hidden
     >
@@ -54,7 +54,28 @@ function MobileScrollCue({
       >
         Scroll
       </span>
-      <div className="h-[52px] w-0.5 rounded-full bg-white/90" />
+      <motion.svg
+        width="20"
+        height="11"
+        viewBox="0 0 20 11"
+        fill="none"
+        aria-hidden
+        className="text-white/90"
+        style={{
+          filter:
+            "drop-shadow(0 1px 3px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(0,0,0,0.55))",
+        }}
+        animate={{ y: [0, 4, 0] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <path
+          d="M1.5 1.75L10 9.25L18.5 1.75"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </motion.svg>
     </motion.div>
   );
 }
@@ -219,7 +240,6 @@ export function ScrollHero() {
   );
 
   const stickyLift = useTransform(scrollYProgress, (p) => {
-    if (isMobile) return 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.12;
@@ -258,7 +278,6 @@ export function ScrollHero() {
   const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
 
   const contactParallax = useTransform(uiProgress, (p) => {
-    if (isMobile) return 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.14;
@@ -284,20 +303,18 @@ export function ScrollHero() {
 
   const heroFrameRef = useRef<HTMLDivElement>(null);
   useMotionValueEvent(heroMask, "change", (mask) => {
-    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
   });
   useEffect(() => {
-    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     const mask = heroMask.get();
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
-  }, [heroMask, isMobile]);
+  }, [heroMask]);
 
   return (
     <>
@@ -360,8 +377,8 @@ export function ScrollHero() {
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <motion.div
             ref={heroFrameRef}
-            className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] md:will-change-transform"
-            style={isMobile ? undefined : { y: stickyLift }}
+            className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
+            style={{ y: stickyLift }}
           >
             {isMobile && framesReady && mobileVideoSrc ? (
               <ScrollScrubVideo

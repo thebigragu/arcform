@@ -251,7 +251,7 @@ function SideBlurbBlock({
   // Mobile: both blurbs share one raised, horizontally centered slot.
   const mobileSlotStyle = {
     top: "auto",
-    bottom: "clamp(5.75rem, 15vmin + 1.75rem, 9rem)",
+    bottom: "clamp(7.25rem, 18vmin + 2.25rem, 10.5rem)",
     left: 0,
     right: 0,
     marginLeft: "auto",

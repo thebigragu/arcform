@@ -11,8 +11,7 @@ export const SCRUB_HANDOFF_START = 0.78;
 
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).
- * Desktop (~360 @ 1440p) uses this. Mobile forces sliding-window at runtime
- * (same disk frames) — full decode-all OOMs phones at 1440×2590×360.
+ * Desktop (~360 @ 1440p) and mobile (~360 @ 1080p) both use decode-all.
  */
 export const DECODE_ALL_FRAMES = true;
 
@@ -54,8 +53,8 @@ export const DECODE_MAX_WIDTH_MOBILE: number | null = null;
 /** Parallel in-flight frame fetches (desktop / decode-all). */
 export const PRELOAD_MAX_CONCURRENT = 16;
 
-/** Parallel in-flight fetches on mobile windowed path — gentler on phones. */
-export const PRELOAD_MAX_CONCURRENT_MOBILE = 6;
+/** Parallel in-flight fetches while mobile decode-all fills in the background. */
+export const PRELOAD_MAX_CONCURRENT_MOBILE = 12;
 
 /** Max extra ahead frames added from scroll velocity (windowed mode only). */
 export const PRELOAD_VELOCITY_AHEAD_MAX = 72;

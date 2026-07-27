@@ -9,9 +9,13 @@ export const SCROLL_HEIGHT_DESKTOP = "2000vh";
 export const VIDEO_HANDOFF = 0.9;
 export const SCRUB_HANDOFF_START = 0.78;
 
+/** Mobile hero: H.264 MP4 scroll-scrub (hardware decode, bounded RAM). */
+export const HERO_MOBILE_SCRUB_VIDEO = "/videos/hero-mobile-scrub.mp4";
+export const HERO_MOBILE_SCRUB_POSTER = "/videos/hero-mobile-scrub-poster.jpg";
+
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).
- * Desktop (~360 @ 1440p) and mobile (~360 @ 720p) both use decode-all.
+ * Desktop (~360 @ 1440p) uses decode-all WebP canvas scrub.
  */
 export const DECODE_ALL_FRAMES = true;
 
@@ -24,7 +28,7 @@ export const DECODE_ALL_MAX_FRAMES = 400;
  */
 export const PRELOAD_WINDOW = 40;
 
-/** Smaller first-window loader gate on mobile (unused when readyWhenFullyDecoded). */
+/** Smaller first-window loader gate on mobile (legacy — mobile uses MP4 now). */
 export const PRELOAD_WINDOW_MOBILE = 20;
 
 /** Playhead-priority band (±frames) loaded first during decode-all fill. */
@@ -51,8 +55,7 @@ export const PRELOAD_MAX_DECODED_MOBILE = 80;
 export const DECODE_MAX_WIDTH: number | null = null;
 
 /**
- * Mobile runtime decode width. `null` = use native extract size (mobile
- * sequence is already ~720 short-edge — no browser resize).
+ * Mobile runtime decode width. Unused — mobile hero is MP4 scrub, not WebP.
  */
 export const DECODE_MAX_WIDTH_MOBILE: number | null = null;
 

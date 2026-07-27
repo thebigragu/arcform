@@ -21,13 +21,7 @@ const VARIANTS = [
     // 1440p (height) — never scale below; never upscale.
     maxHeight: 1440,
   },
-  {
-    id: "mobile",
-    source: path.join(VIDEOS, "hero-kling-mobile.mp4"),
-    outDir: path.join(OUT, "mobile"),
-    // Portrait 720p short-edge — light enough for mobile decode-all.
-    maxWidth: 720,
-  },
+  // Mobile hero uses MP4 scroll-scrub — see scripts/encode-hero-mobile-scrub.cjs
 ];
 
 function findBin(name) {

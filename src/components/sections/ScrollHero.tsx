@@ -5,6 +5,7 @@ import { ContactModal } from "@/components/ui/ContactModal";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { HeroSideCopy } from "@/components/hero/HeroSideCopy";
 import { ScrollScrubCanvas } from "@/components/hero/ScrollScrubCanvas";
+import { ScrollScrubVideo } from "@/components/hero/ScrollScrubVideo";
 import { useHeroPreload } from "@/context/HeroPreloadContext";
 import { useScrollFrameIndex } from "@/hooks/useScrollFrameIndex";
 import {
@@ -328,14 +329,22 @@ export function ScrollHero() {
               y: stickyLift,
             }}
           >
-            <ScrollScrubCanvas
-              images={images}
-              targetFrameIndex={targetFrameIndex}
-              opacity={videoFade}
-              scrollProgress={driveProgress}
-              enabled={framesReady}
-              isMobile={isMobile}
-            />
+            {isMobile ? (
+              <ScrollScrubVideo
+                scrubProgress={frameProgress}
+                opacity={videoFade}
+                enabled={framesReady}
+              />
+            ) : (
+              <ScrollScrubCanvas
+                images={images}
+                targetFrameIndex={targetFrameIndex}
+                opacity={videoFade}
+                scrollProgress={driveProgress}
+                enabled={framesReady}
+                isMobile={false}
+              />
+            )}
 
             <HeroSideCopy
               progress={isMobile ? scrollYProgress : driveProgress}

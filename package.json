@@ -18,7 +18,8 @@
     "videos:process": "blender --background --python blender/render_process_atrium_loop.py",
     "videos:encode": "node scripts/encode-videos.cjs",
     "videos": "npm run videos:encode",
-    "hero:frames": "node scripts/extract-hero-frames.cjs"
+    "hero:frames": "node scripts/extract-hero-frames.cjs",
+    "hero:mobile-scrub": "node scripts/encode-hero-mobile-scrub.cjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

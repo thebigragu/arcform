@@ -1,15 +1,12 @@
 "use client";
 
 import { useFramePreload } from "@/hooks/useFramePreload";
+import { useHeroVideoPreload } from "@/hooks/useHeroVideoPreload";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
-  DECODE_MAX_WIDTH_MOBILE,
   HERO_SEQUENCE_PATHS,
   PRELOAD_MAX_CONCURRENT,
-  PRELOAD_MAX_CONCURRENT_MOBILE,
-  PRELOAD_PLAYHEAD_BAND,
   PRELOAD_WINDOW,
-  PRELOAD_WINDOW_MOBILE,
 } from "@/lib/hero-sequence/config";
 import type {
   HeroSequenceManifest,
@@ -35,7 +32,7 @@ type HeroPreloadContextValue = {
   manifest: HeroSequenceManifest | null;
   variant: "desktop" | "mobile" | null;
   heroRequired: boolean;
-  /** Shared playhead — ScrollHero writes, sliding-window preload reads. */
+  /** Shared playhead — desktop canvas preload reads; unused on mobile MP4. */
   playheadRef: MutableRefObject<number>;
 };
 
@@ -49,12 +46,10 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
   const [variant, setVariant] = useState<"desktop" | "mobile" | null>(null);
   const playheadRef = useRef(0);
 
-  // null until viewport is measured — avoids mobile→desktop double decode.
   const variantReady = useMobile !== null;
-  const basePath = useMobile
-    ? HERO_SEQUENCE_PATHS.mobile
-    : HERO_SEQUENCE_PATHS.desktop;
-  const nextVariant: "desktop" | "mobile" = useMobile ? "mobile" : "desktop";
+  const isMobile = useMobile === true;
+  const nextVariant: "desktop" | "mobile" = isMobile ? "mobile" : "desktop";
+  const desktopPath = HERO_SEQUENCE_PATHS.desktop;
 
   useEffect(() => {
     if (!heroRequired || !variantReady) {
@@ -64,12 +59,19 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
     }
 
     playheadRef.current = 0;
+    setVariant(nextVariant);
+
+    // Mobile: MP4 scrub — no WebP manifest / frame preload.
+    if (isMobile) {
+      setManifest(null);
+      return;
+    }
 
     const hints: HTMLLinkElement[] = [];
     const manifestLink = document.createElement("link");
     manifestLink.rel = "preload";
     manifestLink.as = "fetch";
-    manifestLink.href = `${basePath}/manifest.json`;
+    manifestLink.href = `${desktopPath}/manifest.json`;
     manifestLink.crossOrigin = "anonymous";
     document.head.appendChild(manifestLink);
     hints.push(manifestLink);
@@ -77,24 +79,20 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
     const frameLink = document.createElement("link");
     frameLink.rel = "preload";
     frameLink.as = "image";
-    frameLink.href = `${basePath}/frame-00001.webp`;
+    frameLink.href = `${desktopPath}/frame-00001.webp`;
     document.head.appendChild(frameLink);
     hints.push(frameLink);
 
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch(`${basePath}/manifest.json`);
+        const res = await fetch(`${desktopPath}/manifest.json`);
         if (!res.ok) throw new Error(`manifest ${res.status}`);
         const data = (await res.json()) as HeroSequenceManifest;
-        if (!cancelled) {
-          setManifest(data);
-          setVariant(nextVariant);
-        }
+        if (!cancelled) setManifest(data);
       } catch (e) {
         if (!cancelled) {
           setManifest(null);
-          setVariant(null);
           console.error(e);
         }
       }
@@ -104,38 +102,71 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       for (const link of hints) link.remove();
     };
-  }, [heroRequired, variantReady, basePath, nextVariant]);
+  }, [heroRequired, variantReady, isMobile, desktopPath, nextVariant]);
 
-  const isMobile = nextVariant === "mobile";
-  const preload = useFramePreload(manifest, playheadRef, {
-    enabled: heroRequired && !!manifest,
-    // Both variants: decode-all when N ≤ 400 (mobile sequence is ~720×1294×360).
+  const framePreload = useFramePreload(manifest, playheadRef, {
+    enabled: heroRequired && !!manifest && !isMobile,
     decodeAll: true,
-    maxConcurrent: isMobile
-      ? PRELOAD_MAX_CONCURRENT_MOBILE
-      : PRELOAD_MAX_CONCURRENT,
-    maxDecodeWidth: isMobile ? DECODE_MAX_WIDTH_MOBILE : null,
-    // Desktop: first-window gate. Mobile: wait for all frames before ready.
-    loaderWindow: isMobile ? PRELOAD_WINDOW_MOBILE : PRELOAD_WINDOW,
-    readyWhenFullyDecoded: isMobile,
-    // B: playhead-first. C: only pauses fill after decode-all is complete.
-    pauseFillWhileScrolling: isMobile,
-    playheadBand: PRELOAD_PLAYHEAD_BAND,
+    maxConcurrent: PRELOAD_MAX_CONCURRENT,
+    maxDecodeWidth: null,
+    loaderWindow: PRELOAD_WINDOW,
   });
 
-  const value = useMemo<HeroPreloadContextValue>(
-    () => ({
-      progress: heroRequired ? preload.progress : 1,
-      ready: heroRequired ? preload.ready : true,
-      error: preload.error,
-      images: preload.images,
-      manifest,
-      variant,
-      heroRequired,
-      playheadRef,
-    }),
-    [heroRequired, preload, manifest, variant],
+  const videoPreload = useHeroVideoPreload(
+    heroRequired && variantReady && isMobile,
   );
+
+  const value = useMemo<HeroPreloadContextValue>(() => {
+    if (!heroRequired) {
+      return {
+        progress: 1,
+        ready: true,
+        error: null,
+        images: [],
+        manifest: null,
+        variant: null,
+        heroRequired: false,
+        playheadRef,
+      };
+    }
+
+    if (!variantReady) {
+      return {
+        progress: 0,
+        ready: false,
+        error: null,
+        images: [],
+        manifest: null,
+        variant: null,
+        heroRequired: true,
+        playheadRef,
+      };
+    }
+
+    if (isMobile) {
+      return {
+        progress: videoPreload.ready ? 1 : videoPreload.progress,
+        ready: videoPreload.ready,
+        error: videoPreload.error,
+        images: [],
+        manifest: null,
+        variant: "mobile",
+        heroRequired: true,
+        playheadRef,
+      };
+    }
+
+    return {
+      progress: framePreload.ready ? 1 : framePreload.progress,
+      ready: framePreload.ready,
+      error: framePreload.error,
+      images: framePreload.images,
+      manifest,
+      variant: "desktop",
+      heroRequired: true,
+      playheadRef,
+    };
+  }, [heroRequired, variantReady, isMobile, videoPreload, framePreload, manifest]);
 
   return (
     <HeroPreloadContext.Provider value={value}>{children}</HeroPreloadContext.Provider>

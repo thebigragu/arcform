@@ -19,6 +19,9 @@ export const MOBILE_SCRUB_FPS = 60;
 /** Min ms between video seek attempts on mobile. */
 export const MOBILE_SEEK_INTERVAL_MS = 70;
 
+/** Frames pre-decoded during WebCodecs preload for instant first paint + scroll headroom. */
+export const MOBILE_WEBCODECS_PREWARM_FRAMES = 32;
+
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).
  * Desktop (~360 @ 1440p) uses decode-all WebP canvas scrub.

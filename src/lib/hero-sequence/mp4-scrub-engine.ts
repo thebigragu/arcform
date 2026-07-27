@@ -33,6 +33,9 @@ type IndexedMp4 = {
   meta: Mp4ScrubMetadata;
 };
 
+const MAX_CACHE = 64;
+const DECODE_TIMEOUT_MS = 8000;
+
 function getCodecDescription(
   file: ISOFile,
   trackId: number,
@@ -127,18 +130,30 @@ async function indexMp4Scrub(buffer: ArrayBuffer): Promise<IndexedMp4> {
   });
 }
 
-const MAX_CACHE = 48;
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+    promise
+      .then((value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
 
 export class Mp4ScrubEngine {
   private samples: EncodedScrubSample[] = [];
   private config!: VideoDecoderConfig;
   readonly meta: Mp4ScrubMetadata;
   private cache = new Map<number, VideoFrame>();
-  private decoder: VideoDecoder | null = null;
   private serial: Promise<unknown> = Promise.resolve();
   private closed = false;
-  private pendingResolve: ((frame: VideoFrame) => void) | null = null;
-  private pendingReject: ((error: Error) => void) | null = null;
 
   private constructor(meta: Mp4ScrubMetadata) {
     this.meta = meta;
@@ -147,6 +162,7 @@ export class Mp4ScrubEngine {
   static async create(
     buffer: ArrayBuffer,
     onProgress?: (progress: number) => void,
+    prewarmCount = 32,
   ): Promise<Mp4ScrubEngine> {
     onProgress?.(0.82);
     const { samples, config, meta } = await indexMp4Scrub(buffer);
@@ -159,11 +175,39 @@ export class Mp4ScrubEngine {
     const engine = new Mp4ScrubEngine(meta);
     engine.samples = samples;
     engine.config = config;
-    onProgress?.(0.92);
 
-    await engine.getFrame(0);
+    const warmMax = Math.min(
+      meta.frameCount,
+      Math.max(1, prewarmCount),
+    );
+
+    onProgress?.(0.9);
+    for (let i = 0; i < warmMax; i++) {
+      await engine.getFrame(i);
+      onProgress?.(0.9 + (0.1 * (i + 1)) / warmMax);
+    }
+
     onProgress?.(1);
     return engine;
+  }
+
+  hasFrame(index: number): boolean {
+    return this.cache.has(index);
+  }
+
+  nearestCached(index: number): number | null {
+    if (this.cache.has(index)) return index;
+
+    let best: number | null = null;
+    let bestDistance = Infinity;
+    for (const key of this.cache.keys()) {
+      const distance = Math.abs(key - index);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = key;
+      }
+    }
+    return best;
   }
 
   getFrame(index: number): Promise<VideoFrame> {
@@ -181,48 +225,26 @@ export class Mp4ScrubEngine {
     return task;
   }
 
-  private ensureDecoder(): VideoDecoder {
-    if (!this.decoder || this.decoder.state === "closed") {
-      this.decoder = new VideoDecoder({
-        output: (frame) => {
-          const resolve = this.pendingResolve;
-          this.pendingResolve = null;
-          if (resolve) resolve(frame);
-          else frame.close();
-        },
-        error: (error) => {
-          const reject = this.pendingReject;
-          this.pendingResolve = null;
-          this.pendingReject = null;
-          if (reject) reject(error);
-        },
-      });
-      this.decoder.configure(this.config);
-    }
-    return this.decoder;
-  }
+  private decodeSample(sample: EncodedScrubSample): Promise<VideoFrame> {
+    return withTimeout(
+      new Promise<VideoFrame>((resolve, reject) => {
+        let output: VideoFrame | null = null;
 
-  private decodeIndex(index: number): Promise<VideoFrame> {
-    if (this.closed) {
-      return Promise.reject(new Error("Mp4ScrubEngine is closed"));
-    }
+        const decoder = new VideoDecoder({
+          output: (frame) => {
+            output = frame;
+          },
+          error: (error) => {
+            try {
+              decoder.close();
+            } catch {
+              /* ignore */
+            }
+            reject(error);
+          },
+        });
 
-    const cached = this.cache.get(index);
-    if (cached) {
-      return Promise.resolve(cached.clone());
-    }
-
-    const sample = this.samples[index];
-    if (!sample) {
-      return Promise.reject(new Error(`Missing sample at index ${index}`));
-    }
-
-    return new Promise<VideoFrame>((resolve, reject) => {
-      this.pendingResolve = resolve;
-      this.pendingReject = reject;
-
-      try {
-        const decoder = this.ensureDecoder();
+        decoder.configure(this.config);
         decoder.decode(
           new EncodedVideoChunk({
             type: sample.isKey ? "key" : "delta",
@@ -231,20 +253,49 @@ export class Mp4ScrubEngine {
             data: sample.data,
           }),
         );
-        void decoder.flush().catch((error: Error) => {
-          this.pendingResolve = null;
-          this.pendingReject = null;
-          reject(error);
-        });
-      } catch (error) {
-        this.pendingResolve = null;
-        this.pendingReject = null;
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
-    }).then((frame) => {
-      this.putCache(index, frame);
-      return frame.clone();
-    });
+
+        void decoder
+          .flush()
+          .then(() => {
+            decoder.close();
+            if (!output) {
+              reject(new Error("WebCodecs decode produced no frame"));
+              return;
+            }
+            resolve(output);
+          })
+          .catch((error: Error) => {
+            try {
+              decoder.close();
+            } catch {
+              /* ignore */
+            }
+            reject(error);
+          });
+      }),
+      DECODE_TIMEOUT_MS,
+      "WebCodecs frame decode",
+    );
+  }
+
+  private async decodeIndex(index: number): Promise<VideoFrame> {
+    if (this.closed) {
+      throw new Error("Mp4ScrubEngine is closed");
+    }
+
+    const cached = this.cache.get(index);
+    if (cached) {
+      return cached.clone();
+    }
+
+    const sample = this.samples[index];
+    if (!sample) {
+      throw new Error(`Missing sample at index ${index}`);
+    }
+
+    const frame = await this.decodeSample(sample);
+    this.putCache(index, frame);
+    return frame.clone();
   }
 
   private putCache(index: number, frame: VideoFrame) {
@@ -275,9 +326,5 @@ export class Mp4ScrubEngine {
     this.closed = true;
     for (const frame of this.cache.values()) frame.close();
     this.cache.clear();
-    this.decoder?.close();
-    this.decoder = null;
-    this.pendingResolve = null;
-    this.pendingReject = null;
   }
 }

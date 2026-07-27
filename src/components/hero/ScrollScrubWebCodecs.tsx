@@ -1,9 +1,11 @@
 "use client";
 
 import { useWebCodecsScrub } from "@/hooks/useWebCodecsScrub";
+import { HERO_MOBILE_SCRUB_POSTER } from "@/lib/hero-sequence/config";
 import type { Mp4ScrubEngine } from "@/lib/hero-sequence/mp4-scrub-engine";
 import { motion, type MotionValue } from "framer-motion";
-import { useRef } from "react";
+import Image from "next/image";
+import { useCallback, useRef, useState } from "react";
 
 type ScrollScrubWebCodecsProps = {
   engine: Mp4ScrubEngine;
@@ -19,11 +21,14 @@ export function ScrollScrubWebCodecs({
   enabled = true,
 }: ScrollScrubWebCodecsProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [posterVisible, setPosterVisible] = useState(true);
+  const onFirstDraw = useCallback(() => setPosterVisible(false), []);
 
   useWebCodecsScrub(canvasRef, {
     engine,
     targetFrameIndex,
     enabled,
+    onFirstDraw,
   });
 
   return (
@@ -32,6 +37,16 @@ export function ScrollScrubWebCodecs({
       style={{ opacity }}
       aria-hidden
     >
+      {posterVisible ? (
+        <Image
+          src={HERO_MOBILE_SCRUB_POSTER}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+      ) : null}
       <canvas
         ref={canvasRef}
         role="presentation"

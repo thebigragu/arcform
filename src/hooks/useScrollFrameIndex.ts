@@ -1,7 +1,7 @@
 "use client";
 
 import { useMotionValueEvent, type MotionValue } from "framer-motion";
-import type { MutableRefObject } from "react";
+import { useEffect, type MutableRefObject } from "react";
 
 /**
  * Map scroll-driven progress (0–1) to an integer frame index.
@@ -15,13 +15,19 @@ export function useScrollFrameIndex(
 ) {
   const maxIndex = Math.max(0, frameCount - 1);
 
-  useMotionValueEvent(progress, "change", (p) => {
+  const writeIndex = (p: number) => {
     const clamped = Math.min(1, Math.max(0, p));
     targetFrameIndex.current = Math.min(
       maxIndex,
       Math.max(0, Math.round(clamped * maxIndex)),
     );
-  });
+  };
+
+  useEffect(() => {
+    writeIndex(progress.get());
+  }, [progress, maxIndex]);
+
+  useMotionValueEvent(progress, "change", writeIndex);
 
   return targetFrameIndex;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { HERO_MOBILE_SCRUB_POSTER, HERO_MOBILE_SCRUB_VIDEO } from "@/lib/hero-sequence/config";
+import { HERO_MOBILE_SCRUB_POSTER, HERO_MOBILE_SCRUB_VIDEO, MOBILE_WEBCODECS_PREWARM_FRAMES } from "@/lib/hero-sequence/config";
 import { Mp4ScrubEngine } from "@/lib/hero-sequence/mp4-scrub-engine";
 import { useEffect, useRef, useState } from "react";
 
@@ -72,6 +72,37 @@ async function fetchScrubMp4(
   return bytes.buffer;
 }
 
+function warmupVideoSrc(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+
+    const cleanup = () => {
+      video.removeEventListener("loadeddata", onReady);
+      video.removeEventListener("error", onError);
+      video.removeAttribute("src");
+      video.load();
+    };
+
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+
+    const onError = () => {
+      cleanup();
+      reject(new Error("Video warmup failed"));
+    };
+
+    video.addEventListener("loadeddata", onReady, { once: true });
+    video.addEventListener("error", onError, { once: true });
+    video.src = src;
+    video.load();
+  });
+}
+
 /**
  * Fetch mobile scrub MP4. Prefer WebCodecs canvas scrub; fall back to blob + video seeks.
  */
@@ -95,10 +126,19 @@ export function useHeroVideoPreload(enabled: boolean) {
     link.crossOrigin = "anonymous";
     document.head.appendChild(link);
 
-    const finishVideoFallback = (buffer: ArrayBuffer) => {
+    const finishVideoFallback = async (buffer: ArrayBuffer) => {
       const blob = new Blob([buffer], { type: "video/mp4" });
       const url = URL.createObjectURL(blob);
       blobRef.current = url;
+
+      setState((current) => ({
+        ...current,
+        progress: Math.max(current.progress, 0.9),
+      }));
+
+      await warmupVideoSrc(url);
+      if (cancelled) return;
+
       setState({
         ready: true,
         progress: 1,
@@ -121,11 +161,15 @@ export function useHeroVideoPreload(enabled: boolean) {
 
         if (supportsWebCodecs()) {
           try {
-            const engine = await Mp4ScrubEngine.create(buffer, (progress) => {
-              if (!cancelled) {
-                setState((current) => ({ ...current, progress }));
-              }
-            });
+            const engine = await Mp4ScrubEngine.create(
+              buffer,
+              (progress) => {
+                if (!cancelled) {
+                  setState((current) => ({ ...current, progress }));
+                }
+              },
+              MOBILE_WEBCODECS_PREWARM_FRAMES,
+            );
 
             if (cancelled) {
               engine.close();
@@ -148,7 +192,7 @@ export function useHeroVideoPreload(enabled: boolean) {
         }
 
         if (cancelled) return;
-        finishVideoFallback(buffer);
+        await finishVideoFallback(buffer);
       } catch (error) {
         if (cancelled) return;
         console.error(error);

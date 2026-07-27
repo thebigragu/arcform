@@ -44,6 +44,7 @@ type UseWebCodecsScrubOptions = {
   targetFrameIndex: React.RefObject<number>;
   enabled?: boolean;
   maxDpr?: number;
+  onFirstDraw?: () => void;
 };
 
 export function useWebCodecsScrub(
@@ -53,12 +54,14 @@ export function useWebCodecsScrub(
     targetFrameIndex,
     enabled = true,
     maxDpr = CANVAS_MAX_DPR_MOBILE,
+    onFirstDraw,
   }: UseWebCodecsScrubOptions,
 ) {
   const lastDrawn = useRef(-1);
   const layoutRef = useRef({ cssW: 0, cssH: 0, dpr: 1 });
   const inFlight = useRef(false);
   const pendingIndex = useRef<number | null>(null);
+  const firstDrawn = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,18 +69,19 @@ export function useWebCodecsScrub(
 
     const ctx = canvas.getContext("2d", {
       alpha: false,
-      desynchronized: true,
     });
     if (!ctx) return;
 
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = maxDpr <= 1.5 ? "low" : "medium";
+    ctx.imageSmoothingQuality = "high";
 
     const resize = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
       const cssW = parent.clientWidth;
       const cssH = parent.clientHeight;
+      if (cssW <= 0 || cssH <= 0) return;
+
       const dpr = Math.min(maxDpr, window.devicePixelRatio || 1);
       layoutRef.current = { cssW, cssH, dpr };
       canvas.width = Math.round(cssW * dpr);
@@ -86,7 +90,7 @@ export function useWebCodecsScrub(
       canvas.style.height = `${cssH}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = maxDpr <= 1.5 ? "low" : "medium";
+      ctx.imageSmoothingQuality = "high";
       lastDrawn.current = -1;
     };
 
@@ -96,7 +100,12 @@ export function useWebCodecsScrub(
 
     const drawFrame = (frame: VideoFrame, index: number) => {
       const { cssW, cssH } = layoutRef.current;
-      const rect = coverRect(frame.displayWidth, frame.displayHeight, cssW, cssH);
+      if (cssW <= 0 || cssH <= 0) return;
+
+      const sourceW = frame.displayWidth || engine.meta.width;
+      const sourceH = frame.displayHeight || engine.meta.height;
+      const rect = coverRect(sourceW, sourceH, cssW, cssH);
+
       ctx.drawImage(
         frame,
         rect.sx,
@@ -109,13 +118,31 @@ export function useWebCodecsScrub(
         rect.dh,
       );
       lastDrawn.current = index;
+
+      if (!firstDrawn.current) {
+        firstDrawn.current = true;
+        onFirstDraw?.();
+      }
     };
 
-    const requestFrame = (index: number) => {
+    const presentIndex = (index: number) => {
       if (index === lastDrawn.current) return;
+
       if (inFlight.current) {
         pendingIndex.current = index;
         return;
+      }
+
+      const nearest = engine.nearestCached(index);
+      if (
+        nearest !== null &&
+        nearest !== lastDrawn.current &&
+        nearest !== index
+      ) {
+        void engine.getFrame(nearest).then((frame) => {
+          drawFrame(frame, nearest);
+          frame.close();
+        });
       }
 
       inFlight.current = true;
@@ -133,14 +160,14 @@ export function useWebCodecsScrub(
           const next = pendingIndex.current;
           pendingIndex.current = null;
           if (next !== null && next !== lastDrawn.current) {
-            requestFrame(next);
+            presentIndex(next);
           }
         });
     };
 
     let raf = 0;
     const tick = () => {
-      requestFrame(targetFrameIndex.current);
+      presentIndex(targetFrameIndex.current);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -151,6 +178,7 @@ export function useWebCodecsScrub(
       inFlight.current = false;
       pendingIndex.current = null;
       lastDrawn.current = -1;
+      firstDrawn.current = false;
     };
-  }, [canvasRef, engine, targetFrameIndex, enabled, maxDpr]);
+  }, [canvasRef, engine, targetFrameIndex, enabled, maxDpr, onFirstDraw]);
 }

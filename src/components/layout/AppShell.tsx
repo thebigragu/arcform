@@ -36,12 +36,13 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <AnimatePresence>
         {loading && <Loader progress={progress} onComplete={complete} />}
       </AnimatePresence>
+      {/*
+        Keep children painted under the opaque loader. opacity-0 prevents mobile
+        Safari from compositing the hero video, so first-frame gating never fires.
+      */}
       <div
-        className={
-          loading
-            ? "opacity-0"
-            : "opacity-100 transition-opacity duration-500"
-        }
+        className={loading ? "pointer-events-none" : undefined}
+        aria-hidden={loading || undefined}
       >
         {children}
       </div>

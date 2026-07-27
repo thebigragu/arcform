@@ -15,6 +15,7 @@ import type {
 import { usePathname } from "next/navigation";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -33,8 +34,10 @@ type HeroPreloadContextValue = {
   variant: "desktop" | "mobile" | null;
   heroRequired: boolean;
   playheadRef: MutableRefObject<number>;
-  /** Blob URL for the mobile scrub MP4 — only set once preload completes. */
+  /** Blob URL for the mobile scrub MP4 — set once the asset is fetched. */
   mobileVideoSrc: string | null;
+  /** Call when the mounted mobile video has painted its first frame. */
+  signalMobilePainted: () => void;
 };
 
 const HeroPreloadContext = createContext<HeroPreloadContextValue | null>(null);
@@ -46,6 +49,9 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
   const [manifest, setManifest] = useState<HeroSequenceManifest | null>(null);
   const [variant, setVariant] = useState<"desktop" | "mobile" | null>(null);
   const playheadRef = useRef(0);
+  /** Src for which the mounted <video> has painted — gates the mobile loader. */
+  const [paintedSrc, setPaintedSrc] = useState<string | null>(null);
+  const videoPreloadSrcRef = useRef<string | null>(null);
 
   const variantReady = useMobile !== null;
   const isMobile = useMobile === true;
@@ -117,6 +123,19 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
     heroRequired && variantReady && isMobile,
   );
 
+  videoPreloadSrcRef.current = videoPreload.src;
+
+  const signalMobilePainted = useCallback(() => {
+    const src = videoPreloadSrcRef.current;
+    if (src) setPaintedSrc(src);
+  }, []);
+
+  const mobileAssetsReady = videoPreload.ready && Boolean(videoPreload.src);
+  const mobilePainted =
+    mobileAssetsReady &&
+    paintedSrc !== null &&
+    paintedSrc === videoPreload.src;
+
   const value = useMemo<HeroPreloadContextValue>(() => {
     if (!heroRequired) {
       return {
@@ -129,6 +148,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         heroRequired: false,
         playheadRef,
         mobileVideoSrc: null,
+        signalMobilePainted,
       };
     }
 
@@ -143,20 +163,24 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         heroRequired: true,
         playheadRef,
         mobileVideoSrc: null,
+        signalMobilePainted,
       };
     }
 
     if (isMobile) {
       return {
-        progress: videoPreload.ready ? 1 : videoPreload.progress,
-        ready: videoPreload.ready,
+        // Stay at 100% while waiting for the mounted video to paint.
+        progress: mobileAssetsReady ? 1 : videoPreload.progress,
+        ready: mobilePainted,
         error: videoPreload.error,
         images: [],
         manifest: null,
         variant: "mobile",
         heroRequired: true,
         playheadRef,
-        mobileVideoSrc: videoPreload.ready ? videoPreload.src : null,
+        // Mount the video as soon as the blob is ready (under the loader).
+        mobileVideoSrc: mobileAssetsReady ? videoPreload.src : null,
+        signalMobilePainted,
       };
     }
 
@@ -170,8 +194,19 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
       heroRequired: true,
       playheadRef,
       mobileVideoSrc: null,
+      signalMobilePainted,
     };
-  }, [heroRequired, variantReady, isMobile, videoPreload, framePreload, manifest]);
+  }, [
+    heroRequired,
+    variantReady,
+    isMobile,
+    videoPreload,
+    framePreload,
+    manifest,
+    mobileAssetsReady,
+    mobilePainted,
+    signalMobilePainted,
+  ]);
 
   return (
     <HeroPreloadContext.Provider value={value}>{children}</HeroPreloadContext.Provider>

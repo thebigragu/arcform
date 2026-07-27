@@ -10,6 +10,7 @@ import { useHeroPreload } from "@/context/HeroPreloadContext";
 import { useScrollFrameIndex } from "@/hooks/useScrollFrameIndex";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
+  HERO_MOBILE_SCRUB_POSTER,
   SCRUB_HANDOFF_START,
   VIDEO_HANDOFF,
 } from "@/lib/hero-sequence/config";
@@ -411,7 +412,7 @@ function ScrollHeroMobile() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { ready: framesReady, mobileVideoSrc } = useHeroPreload();
+  const { mobileVideoSrc, signalMobilePainted } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -432,12 +433,22 @@ function ScrollHeroMobile() {
       >
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
-            {framesReady && mobileVideoSrc ? (
+            {/* Permanent still so the hero never shows bare black while video mounts. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={HERO_MOBILE_SCRUB_POSTER}
+              alt=""
+              className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+              fetchPriority="high"
+              decoding="sync"
+            />
+            {mobileVideoSrc ? (
               <ScrollScrubVideo
                 src={mobileVideoSrc}
                 scrubProgress={frameProgress}
                 opacity={videoFade}
-                enabled={framesReady}
+                enabled
+                onFirstPaint={signalMobilePainted}
               />
             ) : null}
 

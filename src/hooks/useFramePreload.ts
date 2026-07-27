@@ -76,6 +76,12 @@ export function useFramePreload(
     maxDecoded?: number;
     /** Override PRELOAD_AHEAD_BOOST for windowed mode. */
     aheadBoost?: number;
+    /** First-window loader gate (indices 0..loaderWindow). */
+    loaderWindow?: number;
+    /** Pause low-priority fill while the playhead is moving. */
+    pauseFillWhileScrolling?: boolean;
+    /** ±frames around playhead always prioritized. */
+    playheadBand?: number;
   },
 ) {
   const maxConcurrent = options?.maxConcurrent ?? PRELOAD_MAX_CONCURRENT;
@@ -84,6 +90,9 @@ export function useFramePreload(
   const maxDecodeWidth = options?.maxDecodeWidth ?? DECODE_MAX_WIDTH;
   const maxDecoded = options?.maxDecoded ?? PRELOAD_MAX_DECODED;
   const aheadBoost = options?.aheadBoost ?? PRELOAD_AHEAD_BOOST;
+  const loaderWindow = options?.loaderWindow ?? PRELOAD_WINDOW;
+  const pauseFillWhileScrolling = options?.pauseFillWhileScrolling ?? false;
+  const playheadBand = options?.playheadBand ?? 24;
   const [state, setState] = useState<PreloadState>(EMPTY);
   const reducedRef = useRef(false);
 
@@ -117,9 +126,11 @@ export function useFramePreload(
     const hiQueue: number[] = [];
     const loQueue: number[] = [];
 
-    const initialHi = Math.min(count - 1, PRELOAD_WINDOW);
+    const initialHi = Math.min(count - 1, loaderWindow);
     const initialWindowSize = initialHi + 1;
     let initialLoaded = 0;
+    let lastScrollAt = 0;
+    const SCROLL_IDLE_MS = 180;
 
     const publish = (ready: boolean, error: string | null = null) => {
       if (aborted) return;
@@ -304,7 +315,7 @@ export function useFramePreload(
       inFlight.set(index, { promise, abort: controller });
     };
 
-    const takeNext = (): number | undefined => {
+    const takeNextHi = (): number | undefined => {
       while (hiQueue.length > 0) {
         const next = hiQueue.shift()!;
         queued.delete(next);
@@ -312,6 +323,12 @@ export function useFramePreload(
         if (inFlight.has(next)) continue;
         return next;
       }
+      return undefined;
+    };
+
+    const takeNext = (): number | undefined => {
+      const hi = takeNextHi();
+      if (hi !== undefined) return hi;
       while (loQueue.length > 0) {
         const next = loQueue.shift()!;
         queued.delete(next);
@@ -322,9 +339,18 @@ export function useFramePreload(
       return undefined;
     };
 
+    const isScrolling = () =>
+      pauseFillWhileScrolling &&
+      performance.now() - lastScrollAt < SCROLL_IDLE_MS;
+
     const pump = () => {
-      while (activeLoads < maxConcurrent) {
-        const next = takeNext();
+      const scrolling = isScrolling();
+      // While scrolling: fewer parallel loads, playhead queue only.
+      const cap = scrolling
+        ? Math.min(maxConcurrent, 4)
+        : maxConcurrent;
+      while (activeLoads < cap) {
+        const next = scrolling ? takeNextHi() : takeNext();
         if (next === undefined) break;
         loadOne(next);
       }
@@ -348,6 +374,28 @@ export function useFramePreload(
         q.push(i);
       }
       pump();
+    };
+
+    const enqueuePlayheadBand = (center: number) => {
+      const band: number[] = [];
+      for (let d = 0; d <= playheadBand; d++) {
+        const hi = center + d;
+        const lo = center - d;
+        if (d === 0) band.push(center);
+        else {
+          if (hi < count) band.push(hi);
+          if (lo >= 0) band.push(lo);
+        }
+      }
+      enqueue(band, true);
+    };
+
+    const abortFarInflight = (center: number) => {
+      if (!pauseFillWhileScrolling) return;
+      const keep = playheadBand + 12;
+      for (const [idx] of inFlight) {
+        if (Math.abs(idx - center) > keep) abortLoad(idx);
+      }
     };
 
     const bridgeIndices = (from: number, to: number, speed: number) => {
@@ -393,6 +441,18 @@ export function useFramePreload(
     };
 
     let decodeAllBootstrapped = false;
+    let fillRequeued = false;
+
+    const requeueMissingFill = () => {
+      if (!decodeAll || !readyPublished) return;
+      const missing: number[] = [];
+      for (let i = 0; i < count; i++) {
+        if (isScrubFrameReady(images[i])) continue;
+        if (inFlight.has(i)) continue;
+        missing.push(i);
+      }
+      if (missing.length) enqueue(missing);
+    };
 
     const ensureWindow = (center: number) => {
       const c = Math.min(count - 1, Math.max(0, center | 0));
@@ -403,8 +463,23 @@ export function useFramePreload(
             lastScrollDir = c >= lastCenter ? 1 : -1;
           }
           lastCenter = c;
-          enqueue([c], true);
+          lastScrollAt = performance.now();
+          fillRequeued = false;
+          // B: playhead neighborhood first
+          enqueuePlayheadBand(c);
+          // C: drop far decode work while finger is moving
+          abortFarInflight(c);
+        } else if (
+          pauseFillWhileScrolling &&
+          !isScrolling() &&
+          !fillRequeued &&
+          readyPublished
+        ) {
+          // Idle again — resume background fill of anything still missing
+          fillRequeued = true;
+          requeueMissingFill();
         }
+
         if (!decodeAllBootstrapped) {
           decodeAllBootstrapped = true;
           const first: number[] = [];
@@ -526,6 +601,9 @@ export function useFramePreload(
     maxDecodeWidth,
     maxDecoded,
     aheadBoost,
+    loaderWindow,
+    pauseFillWhileScrolling,
+    playheadBand,
   ]);
 
   return state;

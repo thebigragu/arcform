@@ -7,6 +7,9 @@ import {
   HERO_SEQUENCE_PATHS,
   PRELOAD_MAX_CONCURRENT,
   PRELOAD_MAX_CONCURRENT_MOBILE,
+  PRELOAD_PLAYHEAD_BAND,
+  PRELOAD_WINDOW,
+  PRELOAD_WINDOW_MOBILE,
 } from "@/lib/hero-sequence/config";
 import type {
   HeroSequenceManifest,
@@ -103,16 +106,20 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
     };
   }, [heroRequired, variantReady, basePath, nextVariant]);
 
+  const isMobile = nextVariant === "mobile";
   const preload = useFramePreload(manifest, playheadRef, {
     enabled: heroRequired && !!manifest,
     // Both variants: decode-all when N ≤ 400 (mobile sequence is 1080×1942×360).
     decodeAll: true,
-    maxConcurrent:
-      nextVariant === "mobile"
-        ? PRELOAD_MAX_CONCURRENT_MOBILE
-        : PRELOAD_MAX_CONCURRENT,
-    maxDecodeWidth:
-      nextVariant === "mobile" ? DECODE_MAX_WIDTH_MOBILE : null,
+    maxConcurrent: isMobile
+      ? PRELOAD_MAX_CONCURRENT_MOBILE
+      : PRELOAD_MAX_CONCURRENT,
+    maxDecodeWidth: isMobile ? DECODE_MAX_WIDTH_MOBILE : null,
+    // A: smaller first-window gate on mobile so the loader dismisses sooner.
+    loaderWindow: isMobile ? PRELOAD_WINDOW_MOBILE : PRELOAD_WINDOW,
+    // B+C: playhead-first while fill runs; pause far fill while scrubbing.
+    pauseFillWhileScrolling: isMobile,
+    playheadBand: PRELOAD_PLAYHEAD_BAND,
   });
 
   const value = useMemo<HeroPreloadContextValue>(

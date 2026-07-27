@@ -19,10 +19,16 @@ export const DECODE_ALL_FRAMES = true;
 export const DECODE_ALL_MAX_FRAMES = 400;
 
 /**
- * Half-width of the decoded sliding window / first-window loader gate.
- * Ignored for eviction when decode-all is active.
+ * Half-width of the decoded sliding window / first-window loader gate (desktop).
+ * Ignored for eviction when decode-all is active — still gates loader ready.
  */
 export const PRELOAD_WINDOW = 40;
+
+/** Smaller first-window loader gate on mobile — dismiss sooner (~21 frames). */
+export const PRELOAD_WINDOW_MOBILE = 20;
+
+/** Playhead-priority band (±frames) loaded first during decode-all fill. */
+export const PRELOAD_PLAYHEAD_BAND = 24;
 
 /** Extra frames loaded in the current scroll direction (windowed mode). */
 export const PRELOAD_AHEAD_BOOST = 56;

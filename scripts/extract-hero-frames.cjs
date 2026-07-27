@@ -25,8 +25,8 @@ const VARIANTS = [
     id: "mobile",
     source: path.join(VIDEOS, "hero-kling-mobile.mp4"),
     outDir: path.join(OUT, "mobile"),
-    // Portrait 1080p short-edge — phone-sized assets (no runtime downscale).
-    maxWidth: 1080,
+    // Portrait 720p short-edge — light enough for mobile decode-all.
+    maxWidth: 720,
   },
 ];
 

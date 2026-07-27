@@ -11,7 +11,7 @@ export const SCRUB_HANDOFF_START = 0.78;
 
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).
- * Desktop (~360 @ 1440p) and mobile (~360 @ 1080p) both use decode-all.
+ * Desktop (~360 @ 1440p) and mobile (~360 @ 720p) both use decode-all.
  */
 export const DECODE_ALL_FRAMES = true;
 
@@ -52,7 +52,7 @@ export const DECODE_MAX_WIDTH: number | null = null;
 
 /**
  * Mobile runtime decode width. `null` = use native extract size (mobile
- * sequence is already ~1080 short-edge — no browser resize).
+ * sequence is already ~720 short-edge — no browser resize).
  */
 export const DECODE_MAX_WIDTH_MOBILE: number | null = null;
 

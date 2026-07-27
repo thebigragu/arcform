@@ -109,7 +109,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
   const isMobile = nextVariant === "mobile";
   const preload = useFramePreload(manifest, playheadRef, {
     enabled: heroRequired && !!manifest,
-    // Both variants: decode-all when N ≤ 400 (mobile sequence is 1080×1942×360).
+    // Both variants: decode-all when N ≤ 400 (mobile sequence is ~720×1296×360).
     decodeAll: true,
     maxConcurrent: isMobile
       ? PRELOAD_MAX_CONCURRENT_MOBILE

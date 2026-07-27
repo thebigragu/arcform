@@ -2,7 +2,11 @@
 
 import { useFramePreload } from "@/hooks/useFramePreload";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
-import { HERO_SEQUENCE_PATHS } from "@/lib/hero-sequence/config";
+import {
+  HERO_SEQUENCE_PATHS,
+  PRELOAD_MAX_CONCURRENT,
+  PRELOAD_MAX_CONCURRENT_MOBILE,
+} from "@/lib/hero-sequence/config";
 import type {
   HeroSequenceManifest,
   ScrubFrame,
@@ -100,6 +104,12 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
 
   const preload = useFramePreload(manifest, playheadRef, {
     enabled: heroRequired && !!manifest,
+    // Mobile: sliding-window only — decode-all of 1440×2590×360 OOMs phones.
+    decodeAll: nextVariant === "desktop",
+    maxConcurrent:
+      nextVariant === "mobile"
+        ? PRELOAD_MAX_CONCURRENT_MOBILE
+        : PRELOAD_MAX_CONCURRENT,
   });
 
   const value = useMemo<HeroPreloadContextValue>(

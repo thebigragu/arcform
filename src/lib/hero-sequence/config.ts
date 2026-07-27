@@ -11,7 +11,8 @@ export const SCRUB_HANDOFF_START = 0.78;
 
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).
- * Primary path for ~360-frame desktop/mobile; windowed fallback above the gate.
+ * Desktop (~360 @ 1440p) uses this. Mobile forces sliding-window at runtime
+ * (same disk frames) — full decode-all OOMs phones at 1440×2590×360.
  */
 export const DECODE_ALL_FRAMES = true;
 
@@ -38,8 +39,11 @@ export const PRELOAD_MAX_DECODED = 140;
  */
 export const DECODE_MAX_WIDTH: number | null = null;
 
-/** Parallel in-flight frame fetches (same local + production path). */
+/** Parallel in-flight frame fetches (desktop / decode-all). */
 export const PRELOAD_MAX_CONCURRENT = 16;
+
+/** Parallel in-flight fetches on mobile windowed path — gentler on phones. */
+export const PRELOAD_MAX_CONCURRENT_MOBILE = 8;
 
 /** Max extra ahead frames added from scroll velocity (windowed mode only). */
 export const PRELOAD_VELOCITY_AHEAD_MAX = 72;

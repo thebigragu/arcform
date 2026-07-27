@@ -62,10 +62,16 @@ type Inflight = {
 export function useFramePreload(
   manifest: HeroSequenceManifest | null,
   playheadRef: RefObject<number>,
-  options?: { maxConcurrent?: number; enabled?: boolean },
+  options?: {
+    maxConcurrent?: number;
+    enabled?: boolean;
+    /** Override decode-all. `false` forces sliding-window (mobile). */
+    decodeAll?: boolean;
+  },
 ) {
   const maxConcurrent = options?.maxConcurrent ?? PRELOAD_MAX_CONCURRENT;
   const enabled = options?.enabled ?? true;
+  const decodeAllOverride = options?.decodeAll;
   const [state, setState] = useState<PreloadState>(EMPTY);
   const reducedRef = useRef(false);
 
@@ -83,7 +89,8 @@ export function useFramePreload(
 
     const count = manifest.frameCount;
     const decodeAll =
-      DECODE_ALL_FRAMES && count <= DECODE_ALL_MAX_FRAMES;
+      (decodeAllOverride ?? DECODE_ALL_FRAMES) &&
+      count <= DECODE_ALL_MAX_FRAMES;
     const images: (ScrubFrame | undefined)[] = new Array(count);
     const inFlight = new Map<number, Inflight>();
     const queued = new Set<number>();
@@ -498,7 +505,7 @@ export function useFramePreload(
       for (let i = 0; i < count; i++) release(i);
       setState(EMPTY);
     };
-  }, [manifest, maxConcurrent, enabled, playheadRef]);
+  }, [manifest, maxConcurrent, enabled, playheadRef, decodeAllOverride]);
 
   return state;
 }

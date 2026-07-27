@@ -28,6 +28,16 @@ const DONE: HeroVideoPreloadState = {
   src: null,
 };
 
+/** Decode the poster into the image cache so the hero overlay paints instantly. */
+function preloadPoster(): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = HERO_MOBILE_SCRUB_POSTER;
+  });
+}
+
 /** Resolve once the source has real frame data, so the hero never reveals black. */
 function warmupVideoSrc(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -75,12 +85,21 @@ export function useHeroVideoPreload(enabled: boolean) {
 
     let cancelled = false;
 
-    const link = document.createElement("link");
-    link.rel = "preload";
-    link.as = "fetch";
-    link.href = HERO_MOBILE_SCRUB_VIDEO;
-    link.crossOrigin = "anonymous";
-    document.head.appendChild(link);
+    const videoLink = document.createElement("link");
+    videoLink.rel = "preload";
+    videoLink.as = "fetch";
+    videoLink.href = HERO_MOBILE_SCRUB_VIDEO;
+    videoLink.crossOrigin = "anonymous";
+    document.head.appendChild(videoLink);
+
+    const posterLink = document.createElement("link");
+    posterLink.rel = "preload";
+    posterLink.as = "image";
+    posterLink.href = HERO_MOBILE_SCRUB_POSTER;
+    document.head.appendChild(posterLink);
+
+    // Kick poster decode immediately — overlay must be ready when loader drops.
+    void preloadPoster();
 
     const load = async () => {
       try {
@@ -114,7 +133,7 @@ export function useHeroVideoPreload(enabled: boolean) {
         const url = URL.createObjectURL(new Blob(chunks, { type: "video/mp4" }));
         blobRef.current = url;
 
-        await warmupVideoSrc(url);
+        await Promise.all([warmupVideoSrc(url), preloadPoster()]);
         if (cancelled) return;
 
         setState({ ready: true, progress: 1, error: null, src: url });
@@ -135,7 +154,8 @@ export function useHeroVideoPreload(enabled: boolean) {
 
     return () => {
       cancelled = true;
-      link.remove();
+      videoLink.remove();
+      posterLink.remove();
       if (blobRef.current) {
         URL.revokeObjectURL(blobRef.current);
         blobRef.current = null;

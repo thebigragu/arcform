@@ -25,8 +25,8 @@ const VARIANTS = [
     id: "mobile",
     source: path.join(VIDEOS, "hero-kling-mobile.mp4"),
     outDir: path.join(OUT, "mobile"),
-    // Portrait 1440p = short-edge 1440 (≈1440×2590), parity with desktop height floor.
-    maxWidth: 1440,
+    // Portrait 1080p short-edge — phone-sized assets (no runtime downscale).
+    maxWidth: 1080,
   },
 ];
 

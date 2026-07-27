@@ -46,10 +46,10 @@ export const PRELOAD_MAX_DECODED_MOBILE = 80;
 export const DECODE_MAX_WIDTH: number | null = null;
 
 /**
- * Mobile runtime decode width — keeps disk at 1440p but bitmaps ~900×1619.
- * ~6MB/frame decoded vs ~15MB; with an 80-frame budget ≈ 0.5GB vs multi‑GB.
+ * Mobile runtime decode width. `null` = use native extract size (mobile
+ * sequence is already ~1080 short-edge — no browser resize).
  */
-export const DECODE_MAX_WIDTH_MOBILE = 900;
+export const DECODE_MAX_WIDTH_MOBILE: number | null = null;
 
 /** Parallel in-flight frame fetches (desktop / decode-all). */
 export const PRELOAD_MAX_CONCURRENT = 16;

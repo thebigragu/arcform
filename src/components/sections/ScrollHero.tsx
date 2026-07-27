@@ -8,11 +8,11 @@ import { ScrollScrubCanvas } from "@/components/hero/ScrollScrubCanvas";
 import { ScrollScrubVideo } from "@/components/hero/ScrollScrubVideo";
 import { useHeroPreload } from "@/context/HeroPreloadContext";
 import { useScrollFrameIndex } from "@/hooks/useScrollFrameIndex";
+import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
   SCRUB_HANDOFF_START,
   VIDEO_HANDOFF,
 } from "@/lib/hero-sequence/config";
-import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
   motion,
   useMotionTemplate,
@@ -29,12 +29,103 @@ function smoothstep(e: number) {
   return e * e * (3 - 2 * e);
 }
 
+function useFrameProgress(scrollYProgress: MotionValue<number>) {
+  return useTransform(scrollYProgress, (p) => {
+    if (p <= SCRUB_HANDOFF_START) {
+      return (p / SCRUB_HANDOFF_START) * VIDEO_HANDOFF;
+    }
+    const handoff = (p - SCRUB_HANDOFF_START) / (1 - SCRUB_HANDOFF_START);
+    return VIDEO_HANDOFF + handoff * (1 - VIDEO_HANDOFF);
+  });
+}
+
+function useContactMotion(uiProgress: MotionValue<number>, isMobile: boolean) {
+  const contactParallax = useTransform(uiProgress, (p) => {
+    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    const a = SCRUB_HANDOFF_START;
+    const b = SCRUB_HANDOFF_START + 0.14;
+    const tall = !isMobile && vh >= 900;
+    const from = (isMobile ? 0.36 : 0.42) * vh;
+    const mid = (isMobile ? 0.04 : tall ? -0.02 : 0.02) * vh;
+    const to = (isMobile ? -0.08 : tall ? -0.14 : -0.06) * vh;
+    if (p <= a) return from;
+    if (p >= 1) return to;
+    if (p <= b) {
+      const t = smoothstep((p - a) / (b - a));
+      return from + (mid - from) * t;
+    }
+    const t = smoothstep((p - b) / (1 - b));
+    return mid + (to - mid) * t;
+  });
+  const contactOpacity = useTransform(
+    uiProgress,
+    [SCRUB_HANDOFF_START, SCRUB_HANDOFF_START + 0.12, SCRUB_HANDOFF_START + 0.2, 1],
+    [0, 0.45, 1, 1],
+  );
+  return { contactParallax, contactOpacity };
+}
+
+function HeroLogo() {
+  return (
+    <div className="pointer-events-auto fixed top-8 left-7 z-50 sm:top-8 sm:left-8 md:top-14 md:left-14">
+      <div className="relative inline-flex items-center justify-center">
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[42%] -z-10 hidden h-[200%] w-[220%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl md:block"
+          style={{
+            background:
+              "radial-gradient(ellipse 58% 52% at 50% 45%, rgba(26,91,104,0.75) 0%, rgba(26,91,104,0.38) 32%, rgba(42,122,140,0.14) 52%, transparent 72%)",
+          }}
+          animate={{
+            opacity: [0.55, 1, 0.55],
+            scale: [0.92, 1.12, 0.92],
+          }}
+          transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[40%] -z-10 hidden h-[150%] w-[165%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:block"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 42%, rgba(42,122,140,0.7) 0%, rgba(26,91,104,0.4) 38%, rgba(26,91,104,0.12) 62%, transparent 76%)",
+          }}
+          animate={{
+            opacity: [0.5, 0.95, 0.5],
+            scale: [0.96, 1.08, 0.96],
+          }}
+          transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
+        />
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[38%] -z-10 hidden h-[95%] w-[110%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl md:block"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 40%, rgba(58,140,155,0.55) 0%, rgba(26,91,104,0.32) 45%, transparent 70%)",
+          }}
+          animate={{
+            opacity: [0.45, 0.9, 0.45],
+            scale: [1, 1.06, 1],
+          }}
+          transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+        />
+        <Image
+          src="/brand/ragusto-logo.png"
+          alt="Ragusto"
+          width={220}
+          height={260}
+          priority
+          className="relative h-14 w-auto opacity-95 transition duration-500 hover:brightness-125 sm:h-16 md:h-[5.25rem] lg:h-24"
+        />
+      </div>
+    </div>
+  );
+}
+
 function MobileHeroBottomFade({
   scrollProgress,
 }: {
   scrollProgress: MotionValue<number>;
 }) {
-  // Cheaper than mask-image — solid black plate behind contact through Begin.
   const opacity = useTransform(
     scrollProgress,
     [
@@ -61,6 +152,22 @@ function MobileScrollCue({
 }: {
   scrollProgress: MotionValue<number>;
 }) {
+  const [cueIdle, setCueIdle] = useState(true);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useMotionValueEvent(scrollProgress, "change", () => {
+    setCueIdle(false);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => setCueIdle(true), 150);
+  });
+
+  useEffect(
+    () => () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    },
+    [],
+  );
+
   const opacity = useTransform(
     scrollProgress,
     [0, 0.7, 0.82, 0.92, 1],
@@ -89,11 +196,14 @@ function MobileScrollCue({
         aria-hidden
         className="text-white/90"
         style={{
-          filter:
-            "drop-shadow(0 1px 3px rgba(0,0,0,0.9)) drop-shadow(0 2px 8px rgba(0,0,0,0.55))",
+          textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.55)",
         }}
-        animate={{ y: [0, 4, 0] }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={cueIdle ? { y: [0, 4, 0] } : { y: 0 }}
+        transition={
+          cueIdle
+            ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.12 }
+        }
       >
         <path
           d="M1.5 1.75L10 9.25L18.5 1.75"
@@ -107,27 +217,23 @@ function MobileScrollCue({
   );
 }
 
-function ScrollCue({
+function DesktopScrollCue({
   scrollProgress,
-  isMobile,
 }: {
   scrollProgress: MotionValue<number>;
-  isMobile: boolean;
 }) {
-  // Fully gone by the bottom of the scrub (contact) — no residual ghost
   const opacity = useTransform(
     scrollProgress,
     [0, 0.7, 0.82, 0.92, 1],
     [1, 1, 0.55, 0, 0],
   );
 
-  // Desktop: mid-right → bottom-right. Mobile: center → lower-right.
-  const left = useTransform(scrollProgress, [0, 0.16], isMobile ? [50, 96] : [91, 94]);
-  const top = useTransform(scrollProgress, [0, 0.16], isMobile ? [24, 98.5] : [48, 90]);
+  const left = useTransform(scrollProgress, [0, 0.16], [91, 94]);
+  const top = useTransform(scrollProgress, [0, 0.16], [48, 90]);
   const cueRef = useRef<HTMLDivElement>(null);
   const anchorX = useTransform(scrollProgress, [0, 0.16], [-50, -100]);
   const anchorY = useTransform(scrollProgress, [0, 0.16], [-50, -100]);
-  const scale = useTransform(scrollProgress, [0, 0.16], isMobile ? [1.08, 0.88] : [1.2, 1]);
+  const scale = useTransform(scrollProgress, [0, 0.16], [1.2, 1]);
   const cueTransform = useMotionTemplate`translate(${anchorX}%, ${anchorY}%) scale(${scale})`;
 
   useMotionValueEvent(left, "change", (v) => {
@@ -141,9 +247,6 @@ function ScrollCue({
     cueRef.current.style.left = `${left.get()}%`;
     cueRef.current.style.top = `${top.get()}%`;
   }, [left, top]);
-
-  const lineH = isMobile ? 52 : 68;
-  const travel = isMobile ? 34 : 48;
 
   return (
     <motion.div
@@ -168,11 +271,7 @@ function ScrollCue({
           Scroll
         </span>
 
-        {/* Minimal luxury cue: hairline + traveling mark — no glow blobs */}
-        <div
-          className="relative flex justify-center"
-          style={{ height: lineH, width: 2 }}
-        >
+        <div className="relative flex justify-center" style={{ height: 68, width: 2 }}>
           <div
             className="absolute inset-0 rounded-full bg-white"
             style={{
@@ -186,7 +285,7 @@ function ScrollCue({
               boxShadow:
                 "0 0 0 1.5px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.65)",
             }}
-            animate={{ y: [0, travel, 0] }}
+            animate={{ y: [0, 48, 0] }}
             transition={{
               duration: 2.4,
               repeat: Infinity,
@@ -222,18 +321,155 @@ function ScrollCue({
   );
 }
 
-export function ScrollHero() {
+function HeroContactSection({
+  isMobile,
+  contactParallax,
+  contactOpacity,
+  onContactOpen,
+}: {
+  isMobile: boolean;
+  contactParallax: MotionValue<number>;
+  contactOpacity: MotionValue<number>;
+  onContactOpen: () => void;
+}) {
+  return (
+    <motion.div
+      id="contact"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-h-[78dvh] flex-col justify-center px-5 pb-10 pt-4 md:max-h-[68dvh] md:justify-center md:px-6 md:pb-[min(10vh,5rem)] md:pt-0 lg:max-h-[72dvh] lg:pb-[min(14vh,7rem)] xl:pb-[min(16vh,8rem)]"
+      style={{ y: contactParallax, opacity: contactOpacity }}
+    >
+      <div className="pointer-events-auto relative mx-auto w-full max-w-3xl origin-center pb-1 text-center md:pb-2 xl:max-w-5xl xl:scale-[1.1]">
+        <p className="text-[10.5pt] tracking-[0.28em] text-[#c4a574]/90 uppercase md:text-[13pt]">
+          Begin
+        </p>
+        <h2 className="mt-3 font-serif text-[1.85rem] leading-tight tracking-tight text-white sm:text-4xl md:mt-4 md:text-6xl lg:text-7xl">
+          Let&apos;s build something{" "}
+          <span className="inline-block bg-gradient-to-br from-[#f0e2c4] via-[#c4a574] to-[#8a7350] bg-clip-text pe-[0.28em] pb-[0.08em] italic text-transparent">
+            exceptional
+          </span>
+        </h2>
+        <p className="mx-auto mt-4 max-w-xl text-[1rem] leading-relaxed text-white/60 md:mt-5 md:max-w-none md:text-xl">
+          {(
+            [
+              "Ragusto is a bespoke web design and app creation studio building cinematic sites,",
+              "custom applications, and product experiences with meticulous craft.",
+            ] as const
+          ).map((line, lineIndex) => (
+            <span
+              key={line}
+              className={
+                lineIndex === 0
+                  ? "md:block md:whitespace-nowrap"
+                  : "md:mt-0 md:block md:whitespace-nowrap"
+              }
+            >
+              {lineIndex > 0 ? <span className="md:hidden"> </span> : null}
+              {line.split(" ").map((word, i, arr) => {
+                const clean = word.replace(/[.,]/g, "");
+                const emph = ["bespoke", "cinematic", "meticulous", "craft"].includes(
+                  clean,
+                );
+                return (
+                  <span key={`${lineIndex}-${word}-${i}`}>
+                    {emph ? <span className="text-[#c4a574]">{word}</span> : word}
+                    {i < arr.length - 1 ? " " : ""}
+                  </span>
+                );
+              })}
+            </span>
+          ))}
+        </p>
+
+        <div className="mt-6 flex justify-center md:mt-8">
+          {isMobile ? (
+            <Button
+              type="button"
+              onClick={onContactOpen}
+              className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white"
+            >
+              Get in touch
+            </Button>
+          ) : (
+            <Magnetic>
+              <Button
+                type="button"
+                onClick={onContactOpen}
+                className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white md:text-lg"
+              >
+                Get in touch
+              </Button>
+            </Magnetic>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function ScrollHeroMobile() {
   const scrubRef = useRef<HTMLDivElement>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
-  const mobileHero = useHeroMobileVideo();
-  const isMobile = mobileHero ?? true;
+  const openContact = useCallback(() => setContactOpen(true), []);
+  const { ready: framesReady, mobileVideoSrc } = useHeroPreload();
+
+  const { scrollYProgress } = useScroll({
+    target: scrubRef,
+    offset: ["start start", "end end"],
+  });
+
+  const uiProgress = scrollYProgress;
+  const frameProgress = useFrameProgress(scrollYProgress);
+  const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
+  const { contactParallax, contactOpacity } = useContactMotion(uiProgress, true);
+
+  return (
+    <>
+      <HeroLogo />
+      <section
+        ref={scrubRef}
+        className="relative h-[1200vh] bg-transparent md:h-[2000vh]"
+      >
+        <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
+          <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
+            {framesReady && mobileVideoSrc ? (
+              <ScrollScrubVideo
+                src={mobileVideoSrc}
+                scrubProgress={frameProgress}
+                opacity={videoFade}
+                enabled={framesReady}
+              />
+            ) : null}
+
+            <MobileHeroBottomFade scrollProgress={uiProgress} />
+            <HeroSideCopy progress={uiProgress} />
+            <MobileScrollCue scrollProgress={uiProgress} />
+          </div>
+
+          <HeroContactSection
+            isMobile
+            contactParallax={contactParallax}
+            contactOpacity={contactOpacity}
+            onContactOpen={openContact}
+          />
+        </div>
+      </section>
+      <ContactModal open={contactOpen} onClose={closeContact} />
+    </>
+  );
+}
+
+function ScrollHeroDesktop() {
+  const scrubRef = useRef<HTMLDivElement>(null);
+  const heroFrameRef = useRef<HTMLDivElement>(null);
+  const [contactOpen, setContactOpen] = useState(false);
+  const closeContact = useCallback(() => setContactOpen(false), []);
+  const openContact = useCallback(() => setContactOpen(true), []);
   const {
     images,
     ready: framesReady,
     manifest,
     playheadRef,
-    mobileVideoSrc,
   } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
@@ -241,7 +477,6 @@ export function ScrollHero() {
     offset: ["start start", "end end"],
   });
 
-  // Desktop: soft spring on UI. Mobile: raw scroll (no extra rAF loops).
   const sprungProgress = useSpring(scrollYProgress, {
     stiffness: 130,
     damping: 28,
@@ -249,30 +484,21 @@ export function ScrollHero() {
     restDelta: 0.00005,
     restSpeed: 0.00005,
   });
-  const uiProgress = isMobile ? scrollYProgress : sprungProgress;
+  const uiProgress = sprungProgress;
+  const frameProgress = useFrameProgress(scrollYProgress);
 
-  // Frame scrub must track raw scroll — smoothed UI must not outrun video.
-  const frameProgress = useTransform(scrollYProgress, (p) => {
-    if (p <= SCRUB_HANDOFF_START) {
-      return (p / SCRUB_HANDOFF_START) * VIDEO_HANDOFF;
-    }
-    const handoff = (p - SCRUB_HANDOFF_START) / (1 - SCRUB_HANDOFF_START);
-    return VIDEO_HANDOFF + handoff * (1 - VIDEO_HANDOFF);
-  });
-
-  const targetFrameIndex = useScrollFrameIndex(
+  useScrollFrameIndex(
     frameProgress,
     manifest?.frameCount ?? 1,
     playheadRef,
   );
 
   const stickyLift = useTransform(scrollYProgress, (p) => {
-    if (isMobile) return 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.12;
-    const endLift = isMobile ? -(1 / 3) * vh : -0.5 * vh;
-    const midLift = isMobile ? -0.18 * vh : -0.28 * vh;
+    const endLift = -0.5 * vh;
+    const midLift = -0.28 * vh;
 
     if (p <= a) return 0;
     if (p >= 1) return endLift;
@@ -304,102 +530,25 @@ export function ScrollHero() {
     ],
   );
   const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
+  const { contactParallax, contactOpacity } = useContactMotion(uiProgress, false);
 
-  const contactParallax = useTransform(uiProgress, (p) => {
-    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
-    const a = SCRUB_HANDOFF_START;
-    const b = SCRUB_HANDOFF_START + 0.14;
-    // Large viewports: settle higher so Begin sits closer to the lifted video.
-    const tall = !isMobile && vh >= 900;
-    const from = (isMobile ? 0.36 : 0.42) * vh;
-    const mid = (isMobile ? 0.04 : tall ? -0.02 : 0.02) * vh;
-    const to = (isMobile ? -0.08 : tall ? -0.14 : -0.06) * vh;
-    if (p <= a) return from;
-    if (p >= 1) return to;
-    if (p <= b) {
-      const t = smoothstep((p - a) / (b - a));
-      return from + (mid - from) * t;
-    }
-    const t = smoothstep((p - b) / (1 - b));
-    return mid + (to - mid) * t;
-  });
-  const contactOpacity = useTransform(
-    uiProgress,
-    [SCRUB_HANDOFF_START, SCRUB_HANDOFF_START + 0.12, SCRUB_HANDOFF_START + 0.2, 1],
-    [0, 0.45, 1, 1],
-  );
-
-  const heroFrameRef = useRef<HTMLDivElement>(null);
   useMotionValueEvent(heroMask, "change", (mask) => {
-    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
   });
   useEffect(() => {
-    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     const mask = heroMask.get();
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
-  }, [heroMask, isMobile]);
+  }, [heroMask]);
 
   return (
     <>
-      <div className="pointer-events-auto fixed top-8 left-7 z-50 sm:top-8 sm:left-8 md:top-14 md:left-14">
-        <div className="relative inline-flex items-center justify-center">
-          <motion.span
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[42%] -z-10 hidden h-[200%] w-[220%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl md:block"
-            style={{
-              background:
-                "radial-gradient(ellipse 58% 52% at 50% 45%, rgba(26,91,104,0.75) 0%, rgba(26,91,104,0.38) 32%, rgba(42,122,140,0.14) 52%, transparent 72%)",
-            }}
-            animate={{
-              opacity: [0.55, 1, 0.55],
-              scale: [0.92, 1.12, 0.92],
-            }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.span
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[40%] -z-10 hidden h-[150%] w-[165%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:block"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 42%, rgba(42,122,140,0.7) 0%, rgba(26,91,104,0.4) 38%, rgba(26,91,104,0.12) 62%, transparent 76%)",
-            }}
-            animate={{
-              opacity: [0.5, 0.95, 0.5],
-              scale: [0.96, 1.08, 0.96],
-            }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
-          />
-          <motion.span
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[38%] -z-10 hidden h-[95%] w-[110%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl md:block"
-            style={{
-              background:
-                "radial-gradient(circle at 50% 40%, rgba(58,140,155,0.55) 0%, rgba(26,91,104,0.32) 45%, transparent 70%)",
-            }}
-            animate={{
-              opacity: [0.45, 0.9, 0.45],
-              scale: [1, 1.06, 1],
-            }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-          />
-          <Image
-            src="/brand/ragusto-logo.png"
-            alt="Ragusto"
-            width={220}
-            height={260}
-            priority
-            className="relative h-14 w-auto opacity-95 transition duration-500 hover:brightness-125 sm:h-16 md:h-[5.25rem] lg:h-24"
-          />
-        </div>
-      </div>
-
+      <HeroLogo />
       <section
         ref={scrubRef}
         className="relative h-[1200vh] bg-transparent md:h-[2000vh]"
@@ -407,111 +556,40 @@ export function ScrollHero() {
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <motion.div
             ref={heroFrameRef}
-            className={`relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]${isMobile ? "" : " will-change-transform"}`}
-            style={isMobile ? undefined : { y: stickyLift }}
+            className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
+            style={{ y: stickyLift }}
           >
-            {isMobile && framesReady && mobileVideoSrc ? (
-              <ScrollScrubVideo
-                src={mobileVideoSrc}
-                scrubProgress={frameProgress}
-                opacity={videoFade}
-                enabled={framesReady}
-              />
-            ) : !isMobile ? (
-              <ScrollScrubCanvas
-                images={images}
-                targetFrameIndex={targetFrameIndex}
-                opacity={videoFade}
-                scrollProgress={uiProgress}
-                enabled={framesReady}
-                isMobile={false}
-              />
-            ) : null}
-
-            {isMobile ? (
-              <MobileHeroBottomFade scrollProgress={uiProgress} />
-            ) : null}
-
+            <ScrollScrubCanvas
+              images={images}
+              targetFrameIndex={playheadRef}
+              opacity={videoFade}
+              scrollProgress={uiProgress}
+              enabled={framesReady}
+              isMobile={false}
+            />
             <HeroSideCopy progress={uiProgress} />
-
-            {isMobile ? (
-              <MobileScrollCue scrollProgress={uiProgress} />
-            ) : (
-              <ScrollCue
-                scrollProgress={uiProgress}
-                isMobile={false}
-              />
-            )}
+            <DesktopScrollCue scrollProgress={uiProgress} />
           </motion.div>
 
-          <motion.div
-            id="contact"
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-h-[78dvh] flex-col justify-center px-5 pb-10 pt-4 md:max-h-[68dvh] md:justify-center md:px-6 md:pb-[min(10vh,5rem)] md:pt-0 lg:max-h-[72dvh] lg:pb-[min(14vh,7rem)] xl:pb-[min(16vh,8rem)]"
-            style={{ y: contactParallax, opacity: contactOpacity }}
-          >
-            <div className="pointer-events-auto relative mx-auto w-full max-w-3xl origin-center pb-1 text-center md:pb-2 xl:max-w-5xl xl:scale-[1.1]">
-              <p className="text-[10.5pt] tracking-[0.28em] text-[#c4a574]/90 uppercase md:text-[13pt]">
-                Begin
-              </p>
-              <h2 className="mt-3 font-serif text-[1.85rem] leading-tight tracking-tight text-white sm:text-4xl md:mt-4 md:text-6xl lg:text-7xl">
-                Let&apos;s build something{" "}
-                <span className="inline-block bg-gradient-to-br from-[#f0e2c4] via-[#c4a574] to-[#8a7350] bg-clip-text pe-[0.28em] pb-[0.08em] italic text-transparent">
-                  exceptional
-                </span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-[1rem] leading-relaxed text-white/60 md:mt-5 md:max-w-none md:text-xl">
-                {(
-                  [
-                    "Ragusto is a bespoke web design and app creation studio building cinematic sites,",
-                    "custom applications, and product experiences with meticulous craft.",
-                  ] as const
-                ).map((line, lineIndex) => (
-                  <span
-                    key={line}
-                    className={lineIndex === 0 ? "md:block md:whitespace-nowrap" : "md:mt-0 md:block md:whitespace-nowrap"}
-                  >
-                    {lineIndex > 0 ? <span className="md:hidden"> </span> : null}
-                    {line.split(" ").map((word, i, arr) => {
-                      const clean = word.replace(/[.,]/g, "");
-                      const emph = ["bespoke", "cinematic", "meticulous", "craft"].includes(clean);
-                      return (
-                        <span key={`${lineIndex}-${word}-${i}`}>
-                          {emph ? <span className="text-[#c4a574]">{word}</span> : word}
-                          {i < arr.length - 1 ? " " : ""}
-                        </span>
-                      );
-                    })}
-                  </span>
-                ))}
-              </p>
-
-              <div className="mt-6 flex justify-center md:mt-8">
-                {isMobile ? (
-                  <Button
-                    type="button"
-                    onClick={() => setContactOpen(true)}
-                    className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white"
-                  >
-                    Get in touch
-                  </Button>
-                ) : (
-                  <Magnetic>
-                    <Button
-                      type="button"
-                      onClick={() => setContactOpen(true)}
-                      className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white md:text-lg"
-                    >
-                      Get in touch
-                    </Button>
-                  </Magnetic>
-                )}
-              </div>
-            </div>
-          </motion.div>
+          <HeroContactSection
+            isMobile={false}
+            contactParallax={contactParallax}
+            contactOpacity={contactOpacity}
+            onContactOpen={openContact}
+          />
         </div>
       </section>
-
       <ContactModal open={contactOpen} onClose={closeContact} />
     </>
   );
+}
+
+export function ScrollHero() {
+  const mobileHero = useHeroMobileVideo();
+
+  if (mobileHero === false) {
+    return <ScrollHeroDesktop />;
+  }
+
+  return <ScrollHeroMobile />;
 }

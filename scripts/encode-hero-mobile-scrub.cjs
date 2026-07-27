@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Encode mobile hero scroll-scrub MP4 from Kling source.
- * Portrait 720p short-edge, dense keyframes (g=2) for smooth seek scrub.
+ * Portrait 720p short-edge, keyframe every frame (g=1) for fastest seek scrub.
  *
  * Run: node scripts/encode-hero-mobile-scrub.cjs
  */
@@ -16,8 +16,8 @@ const OUT = path.join(VIDEOS, "hero-mobile-scrub.mp4");
 const POSTER = path.join(VIDEOS, "hero-mobile-scrub-poster.jpg");
 
 const MAX_WIDTH = 720;
-/** Keyframe every N frames — 2 ≈ 30 keyframes/s @ 60fps. */
-const GOP = 2;
+/** Keyframe every frame — fastest scrub seeks (larger file). */
+const GOP = 1;
 const CRF = 23;
 
 function findBin(name) {

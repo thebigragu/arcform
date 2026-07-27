@@ -1,7 +1,11 @@
 "use client";
 
 import { useVideoScrub } from "@/hooks/useVideoScrub";
-import { HERO_MOBILE_SCRUB_POSTER } from "@/lib/hero-sequence/config";
+import {
+  HERO_MOBILE_SCRUB_POSTER,
+  MOBILE_SCRUB_FRAME_COUNT,
+  MOBILE_SEEK_INTERVAL_MS,
+} from "@/lib/hero-sequence/config";
 import { motion, type MotionValue } from "framer-motion";
 import { useRef } from "react";
 
@@ -20,7 +24,12 @@ export function ScrollScrubVideo({
 }: ScrollScrubVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useVideoScrub(videoRef, { scrubProgress, enabled });
+  useVideoScrub(videoRef, {
+    scrubProgress,
+    enabled,
+    frameCount: MOBILE_SCRUB_FRAME_COUNT,
+    minSeekIntervalMs: MOBILE_SEEK_INTERVAL_MS,
+  });
 
   return (
     <motion.div

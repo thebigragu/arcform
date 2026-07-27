@@ -8,11 +8,19 @@ type UseVideoScrubOptions = {
   enabled?: boolean;
   /** Min ms between seek attempts (mobile decode budget). */
   minSeekIntervalMs?: number;
+  /** Snap progress to discrete frame indices before seeking. */
+  frameCount?: number;
 };
+
+function quantizeProgress(p: number, frameCount: number) {
+  const max = Math.max(1, frameCount - 1);
+  const clamped = Math.min(1, Math.max(0, p));
+  return Math.round(clamped * max) / max;
+}
 
 /**
  * Map scroll progress → video.currentTime on change only.
- * Throttles seeks and skips overlapping work until seeked.
+ * Throttles seeks, quantizes to frame boundaries, skips overlapping work.
  */
 export function useVideoScrub(
   videoRef: React.RefObject<HTMLVideoElement | null>,
@@ -20,6 +28,7 @@ export function useVideoScrub(
     scrubProgress,
     enabled = true,
     minSeekIntervalMs = 48,
+    frameCount,
   }: UseVideoScrubOptions,
 ) {
   const targetRef = useRef(0);
@@ -34,6 +43,9 @@ export function useVideoScrub(
     let disposed = false;
     let video: HTMLVideoElement | null = null;
     let unsubScroll: (() => void) | undefined;
+
+    const frameTolerance =
+      frameCount && frameCount > 1 ? 0.5 / (frameCount - 1) : 0.025;
 
     const clearThrottle = () => {
       if (throttleTimerRef.current !== null) {
@@ -66,7 +78,7 @@ export function useVideoScrub(
       }
 
       const want = targetRef.current * el.duration;
-      if (Math.abs(el.currentTime - want) < 0.025) {
+      if (Math.abs(el.currentTime - want) < frameTolerance) {
         pendingRef.current = false;
         return;
       }
@@ -105,10 +117,18 @@ export function useVideoScrub(
 
       if (!unsubScroll) {
         unsubScroll = scrubProgress.on("change", (p) => {
-          targetRef.current = Math.min(1, Math.max(0, p));
+          const clamped = Math.min(1, Math.max(0, p));
+          targetRef.current =
+            frameCount && frameCount > 1
+              ? quantizeProgress(clamped, frameCount)
+              : clamped;
           seekToTarget();
         });
-        targetRef.current = scrubProgress.get();
+        const initial = scrubProgress.get();
+        targetRef.current =
+          frameCount && frameCount > 1
+            ? quantizeProgress(initial, frameCount)
+            : initial;
       }
 
       if (video.readyState >= 1) seekToTarget(true);
@@ -139,5 +159,5 @@ export function useVideoScrub(
       seekingRef.current = false;
       pendingRef.current = false;
     };
-  }, [scrubProgress, enabled, videoRef, minSeekIntervalMs]);
+  }, [scrubProgress, enabled, videoRef, minSeekIntervalMs, frameCount]);
 }

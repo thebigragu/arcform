@@ -29,6 +29,33 @@ function smoothstep(e: number) {
   return e * e * (3 - 2 * e);
 }
 
+function MobileHeroBottomFade({
+  scrollProgress,
+}: {
+  scrollProgress: MotionValue<number>;
+}) {
+  // Cheaper than mask-image on the full hero plane — same bottom vignette feel.
+  const opacity = useTransform(
+    scrollProgress,
+    [
+      SCRUB_HANDOFF_START + 0.04,
+      SCRUB_HANDOFF_START + 0.1,
+      SCRUB_HANDOFF_START + 0.16,
+      SCRUB_HANDOFF_START + 0.2,
+      1,
+    ],
+    [0, 0.42, 0.68, 0.82, 0.9],
+  );
+
+  return (
+    <motion.div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[62%] bg-gradient-to-t from-[#08090b] from-25% via-[#08090b]/55 via-55% to-transparent"
+      style={{ opacity }}
+      aria-hidden
+    />
+  );
+}
+
 function MobileScrollCue({
   scrollProgress,
 }: {
@@ -240,6 +267,7 @@ export function ScrollHero() {
   );
 
   const stickyLift = useTransform(scrollYProgress, (p) => {
+    if (isMobile) return 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.12;
@@ -303,18 +331,20 @@ export function ScrollHero() {
 
   const heroFrameRef = useRef<HTMLDivElement>(null);
   useMotionValueEvent(heroMask, "change", (mask) => {
+    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
   });
   useEffect(() => {
+    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     const mask = heroMask.get();
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
-  }, [heroMask]);
+  }, [heroMask, isMobile]);
 
   return (
     <>
@@ -377,8 +407,8 @@ export function ScrollHero() {
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <motion.div
             ref={heroFrameRef}
-            className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
-            style={{ y: stickyLift }}
+            className={`relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]${isMobile ? "" : " will-change-transform"}`}
+            style={isMobile ? undefined : { y: stickyLift }}
           >
             {isMobile && framesReady && mobileVideoSrc ? (
               <ScrollScrubVideo
@@ -396,6 +426,10 @@ export function ScrollHero() {
                 enabled={framesReady}
                 isMobile={false}
               />
+            ) : null}
+
+            {isMobile ? (
+              <MobileHeroBottomFade scrollProgress={uiProgress} />
             ) : null}
 
             <HeroSideCopy progress={uiProgress} />

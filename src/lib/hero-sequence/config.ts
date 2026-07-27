@@ -13,6 +13,12 @@ export const SCRUB_HANDOFF_START = 0.78;
 export const HERO_MOBILE_SCRUB_VIDEO = "/videos/hero-mobile-scrub.mp4";
 export const HERO_MOBILE_SCRUB_POSTER = "/videos/hero-mobile-scrub-poster.jpg";
 
+/** Mobile scrub clip: 6s @ 60fps — quantize seeks to these frame boundaries. */
+export const MOBILE_SCRUB_FRAME_COUNT = 360;
+export const MOBILE_SCRUB_FPS = 60;
+/** Min ms between video seek attempts on mobile. */
+export const MOBILE_SEEK_INTERVAL_MS = 70;
+
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).
  * Desktop (~360 @ 1440p) uses decode-all WebP canvas scrub.

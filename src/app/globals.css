@@ -12,7 +12,6 @@
   --accent-teal: #2a7a8c;
   --accent-violet: #5c6b7a;
   --glow: rgba(26, 91, 104, 0.28);
-  --noise-opacity: 0.02;
   --nav-height: 72px;
   --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
   --max-w: 1800px;
@@ -30,7 +29,6 @@
   --accent-teal: #2a7a8c;
   --accent-violet: #8a9aaa;
   --glow: rgba(26, 91, 104, 0.35);
-  --noise-opacity: 0.028;
 }
 
 @theme inline {
@@ -115,17 +113,6 @@ body {
   background: color-mix(in oklab, var(--bg-elevated) 68%, transparent);
   backdrop-filter: blur(18px);
   border: 1px solid var(--border);
-}
-
-.noise::before {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  opacity: var(--noise-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
 }
 
 .ambient-grid {

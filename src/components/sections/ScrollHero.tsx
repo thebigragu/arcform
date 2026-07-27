@@ -6,10 +6,12 @@ import { Magnetic } from "@/components/ui/Magnetic";
 import { HeroSideCopy } from "@/components/hero/HeroSideCopy";
 import { ScrollScrubCanvas } from "@/components/hero/ScrollScrubCanvas";
 import { ScrollScrubVideo } from "@/components/hero/ScrollScrubVideo";
+import { ScrollScrubWebCodecs } from "@/components/hero/ScrollScrubWebCodecs";
 import { useHeroPreload } from "@/context/HeroPreloadContext";
 import { useScrollFrameIndex } from "@/hooks/useScrollFrameIndex";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
+  MOBILE_SCRUB_FRAME_COUNT,
   SCRUB_HANDOFF_START,
   VIDEO_HANDOFF,
 } from "@/lib/hero-sequence/config";
@@ -411,7 +413,13 @@ function ScrollHeroMobile() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { ready: framesReady, mobileVideoSrc } = useHeroPreload();
+  const {
+    ready: framesReady,
+    mobileScrubEngine,
+    mobileVideoSrc,
+    mobileScrubMode,
+    playheadRef,
+  } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -423,6 +431,12 @@ function ScrollHeroMobile() {
   const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
   const { contactParallax, contactOpacity } = useContactMotion(uiProgress, true);
 
+  useScrollFrameIndex(
+    frameProgress,
+    mobileScrubEngine?.meta.frameCount ?? MOBILE_SCRUB_FRAME_COUNT,
+    playheadRef,
+  );
+
   return (
     <>
       <HeroLogo />
@@ -432,7 +446,15 @@ function ScrollHeroMobile() {
       >
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
-            {framesReady && mobileVideoSrc ? (
+            {framesReady && mobileScrubMode === "webcodecs" && mobileScrubEngine ? (
+              <ScrollScrubWebCodecs
+                engine={mobileScrubEngine}
+                targetFrameIndex={playheadRef}
+                opacity={videoFade}
+                enabled={framesReady}
+              />
+            ) : null}
+            {framesReady && mobileScrubMode === "video" && mobileVideoSrc ? (
               <ScrollScrubVideo
                 src={mobileVideoSrc}
                 scrubProgress={frameProgress}

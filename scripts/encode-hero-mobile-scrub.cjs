@@ -15,10 +15,10 @@ const SOURCE = path.join(VIDEOS, "hero-kling-mobile.mp4");
 const OUT = path.join(VIDEOS, "hero-mobile-scrub.mp4");
 const POSTER = path.join(VIDEOS, "hero-mobile-scrub-poster.jpg");
 
-const MAX_WIDTH = 720;
-/** Keyframe every frame — fastest scrub seeks (larger file). */
+const MAX_WIDTH = 1080;
+/** Keyframe every frame — random-access WebCodecs decode per sample. */
 const GOP = 1;
-const CRF = 23;
+const CRF = 20;
 
 function findBin(name) {
   const envKey = name === "ffmpeg" ? "FFMPEG_PATH" : "FFPROBE_PATH";

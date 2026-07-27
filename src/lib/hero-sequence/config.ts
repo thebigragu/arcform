@@ -9,7 +9,7 @@ export const SCROLL_HEIGHT_DESKTOP = "2000vh";
 export const VIDEO_HANDOFF = 0.9;
 export const SCRUB_HANDOFF_START = 0.78;
 
-/** Mobile hero: H.264 MP4 scroll-scrub (hardware decode, bounded RAM). */
+/** Mobile hero: 1080p H.264 MP4 + WebCodecs canvas scrub. */
 export const HERO_MOBILE_SCRUB_VIDEO = "/videos/hero-mobile-scrub.mp4";
 export const HERO_MOBILE_SCRUB_POSTER = "/videos/hero-mobile-scrub-poster.jpg";
 

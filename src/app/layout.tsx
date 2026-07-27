@@ -55,7 +55,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${cormorant.variable} ${marcellus.variable} h-full antialiased`}
     >
-      <body className="noise min-h-full flex flex-col bg-bg text-fg">
+      <body className="min-h-full flex flex-col bg-bg text-fg">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}

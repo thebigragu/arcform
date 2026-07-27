@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Encode mobile hero scroll-scrub MP4 from Kling source.
- * Portrait 720p short-edge, keyframe every frame (g=1) for fastest seek scrub.
+ * Portrait 900px wide at 30fps, keyframe every frame (g=1) for cheap random seeks.
  *
  * Run: node scripts/encode-hero-mobile-scrub.cjs
  */
@@ -13,12 +13,16 @@ const ROOT = path.join(__dirname, "..");
 const VIDEOS = path.join(ROOT, "public", "videos");
 const SOURCE = path.join(VIDEOS, "hero-kling-mobile.mp4");
 const OUT = path.join(VIDEOS, "hero-mobile-scrub.mp4");
-const POSTER = path.join(VIDEOS, "hero-mobile-scrub-poster.jpg");
+const POSTER = path.join(VIDEOS, "hero-mobile-scrub-poster.webp");
 
-const MAX_WIDTH = 1080;
-/** Keyframe every frame — random-access WebCodecs decode per sample. */
+const MAX_WIDTH = 900;
+/** Keyframe every frame — every scroll seek decodes exactly one frame. */
 const GOP = 1;
-const CRF = 20;
+const CRF = 21;
+/** Halved from the 60fps source: same motion, half the frames and bytes. */
+const FPS = 30;
+/** Slower analysis trims bytes at identical quality; one-time cost on a 6s clip. */
+const PRESET = "slower";
 
 function findBin(name) {
   const envKey = name === "ffmpeg" ? "FFMPEG_PATH" : "FFPROBE_PATH";
@@ -77,7 +81,9 @@ function main() {
   console.log(`Source: ${meta.width}x${meta.height}, ${meta.duration.toFixed(2)}s, ${meta.fps} fps`);
 
   console.log(`\nEncoding scrub MP4 → ${OUT}`);
-  console.log(`  scale=${MAX_WIDTH}:-2  g=${GOP}  crf=${CRF}  +faststart`);
+  console.log(
+    `  fps=${FPS}  scale=${MAX_WIDTH}:-2  g=${GOP}  crf=${CRF}  preset=${PRESET}  +faststart`,
+  );
 
   run(
     [
@@ -86,9 +92,11 @@ function main() {
       SOURCE,
       "-an",
       "-vf",
-      `scale=${MAX_WIDTH}:-2:flags=lanczos`,
+      `fps=${FPS},scale=${MAX_WIDTH}:-2:flags=lanczos`,
       "-c:v",
       "libx264",
+      "-preset",
+      PRESET,
       "-profile:v",
       "high",
       "-pix_fmt",
@@ -110,7 +118,22 @@ function main() {
 
   console.log(`\nPoster → ${POSTER}`);
   run(
-    ["-y", "-i", OUT, "-frames:v", "1", "-update", "1", "-q:v", "2", POSTER],
+    [
+      "-y",
+      "-i",
+      OUT,
+      "-frames:v",
+      "1",
+      "-update",
+      "1",
+      "-c:v",
+      "libwebp",
+      "-quality",
+      "82",
+      "-compression_level",
+      "6",
+      POSTER,
+    ],
     "poster",
   );
 

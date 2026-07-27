@@ -1,7 +1,7 @@
 "use client";
 
 import { useFramePreload } from "@/hooks/useFramePreload";
-import { useHeroVideoPreload, type MobileScrubMode } from "@/hooks/useHeroVideoPreload";
+import { useHeroVideoPreload } from "@/hooks/useHeroVideoPreload";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
   HERO_SEQUENCE_PATHS,
@@ -12,7 +12,6 @@ import type {
   HeroSequenceManifest,
   ScrubFrame,
 } from "@/lib/hero-sequence/types";
-import type { Mp4ScrubEngine } from "@/lib/hero-sequence/mp4-scrub-engine";
 import { usePathname } from "next/navigation";
 import {
   createContext,
@@ -34,11 +33,8 @@ type HeroPreloadContextValue = {
   variant: "desktop" | "mobile" | null;
   heroRequired: boolean;
   playheadRef: MutableRefObject<number>;
-  /** WebCodecs MP4 scrub engine — set when mode is webcodecs. */
-  mobileScrubEngine: Mp4ScrubEngine | null;
-  /** Blob URL for MP4 video fallback — set when mode is video. */
+  /** Blob URL for the mobile scrub MP4 — only set once preload completes. */
   mobileVideoSrc: string | null;
-  mobileScrubMode: MobileScrubMode | null;
 };
 
 const HeroPreloadContext = createContext<HeroPreloadContextValue | null>(null);
@@ -132,9 +128,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         variant: null,
         heroRequired: false,
         playheadRef,
-        mobileScrubEngine: null,
         mobileVideoSrc: null,
-        mobileScrubMode: null,
       };
     }
 
@@ -148,9 +142,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         variant: null,
         heroRequired: true,
         playheadRef,
-        mobileScrubEngine: null,
         mobileVideoSrc: null,
-        mobileScrubMode: null,
       };
     }
 
@@ -164,15 +156,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         variant: "mobile",
         heroRequired: true,
         playheadRef,
-        mobileScrubEngine:
-          videoPreload.ready && videoPreload.mode === "webcodecs"
-            ? videoPreload.engine
-            : null,
-        mobileVideoSrc:
-          videoPreload.ready && videoPreload.mode === "video"
-            ? videoPreload.videoSrc
-            : null,
-        mobileScrubMode: videoPreload.ready ? videoPreload.mode : null,
+        mobileVideoSrc: videoPreload.ready ? videoPreload.src : null,
       };
     }
 
@@ -185,9 +169,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
       variant: "desktop",
       heroRequired: true,
       playheadRef,
-      mobileScrubEngine: null,
       mobileVideoSrc: null,
-      mobileScrubMode: null,
     };
   }, [heroRequired, variantReady, isMobile, videoPreload, framePreload, manifest]);
 

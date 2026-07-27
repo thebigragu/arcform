@@ -1,7 +1,7 @@
 /** Tunable hero scroll-scrub settings */
 
 /** Shorter than desktop — better thumb travel; still long enough for smooth scrub. */
-export const SCROLL_HEIGHT_MOBILE = "1200vh";
+export const SCROLL_HEIGHT_MOBILE = "1000vh";
 /** ~2.7× original 740vh — slower frame velocity for fluid 1440p scrub. */
 export const SCROLL_HEIGHT_DESKTOP = "2000vh";
 
@@ -9,18 +9,15 @@ export const SCROLL_HEIGHT_DESKTOP = "2000vh";
 export const VIDEO_HANDOFF = 0.9;
 export const SCRUB_HANDOFF_START = 0.78;
 
-/** Mobile hero: 1080p H.264 MP4 + WebCodecs canvas scrub. */
+/** Mobile hero: 900px-wide H.264 MP4 scrubbed via video currentTime seeks. */
 export const HERO_MOBILE_SCRUB_VIDEO = "/videos/hero-mobile-scrub.mp4";
-export const HERO_MOBILE_SCRUB_POSTER = "/videos/hero-mobile-scrub-poster.jpg";
+export const HERO_MOBILE_SCRUB_POSTER = "/videos/hero-mobile-scrub-poster.webp";
 
-/** Mobile scrub clip: 6s @ 60fps — quantize seeks to these frame boundaries. */
-export const MOBILE_SCRUB_FRAME_COUNT = 360;
-export const MOBILE_SCRUB_FPS = 60;
+/** Mobile scrub clip: 6s @ 30fps — quantize seeks to these frame boundaries. */
+export const MOBILE_SCRUB_FRAME_COUNT = 180;
+export const MOBILE_SCRUB_FPS = 30;
 /** Min ms between video seek attempts on mobile. */
 export const MOBILE_SEEK_INTERVAL_MS = 70;
-
-/** Frames pre-decoded during WebCodecs preload for instant first paint + scroll headroom. */
-export const MOBILE_WEBCODECS_PREWARM_FRAMES = 32;
 
 /**
  * Prefer decode-all for small sequences (≤ DECODE_ALL_MAX_FRAMES).

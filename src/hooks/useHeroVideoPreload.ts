@@ -1,77 +1,34 @@
 "use client";
 
-import { HERO_MOBILE_SCRUB_POSTER, HERO_MOBILE_SCRUB_VIDEO, MOBILE_WEBCODECS_PREWARM_FRAMES } from "@/lib/hero-sequence/config";
-import { Mp4ScrubEngine } from "@/lib/hero-sequence/mp4-scrub-engine";
+import {
+  HERO_MOBILE_SCRUB_POSTER,
+  HERO_MOBILE_SCRUB_VIDEO,
+} from "@/lib/hero-sequence/config";
 import { useEffect, useRef, useState } from "react";
-
-export type MobileScrubMode = "webcodecs" | "video";
 
 type HeroVideoPreloadState = {
   ready: boolean;
   progress: number;
   error: string | null;
-  engine: Mp4ScrubEngine | null;
-  videoSrc: string | null;
-  mode: MobileScrubMode | null;
+  /** Blob URL for the scrub clip — every seek stays local once set. */
+  src: string | null;
 };
 
 const IDLE: HeroVideoPreloadState = {
   ready: false,
   progress: 0,
   error: null,
-  engine: null,
-  videoSrc: null,
-  mode: null,
+  src: null,
 };
 
 const DONE: HeroVideoPreloadState = {
   ready: true,
   progress: 1,
   error: null,
-  engine: null,
-  videoSrc: null,
-  mode: null,
+  src: null,
 };
 
-function supportsWebCodecs() {
-  return typeof window !== "undefined" && "VideoDecoder" in window;
-}
-
-async function fetchScrubMp4(
-  onProgress: (progress: number) => void,
-): Promise<ArrayBuffer> {
-  const res = await fetch(HERO_MOBILE_SCRUB_VIDEO, { cache: "force-cache" });
-  if (!res.ok) throw new Error(`fetch ${res.status}`);
-
-  const total = Number(res.headers.get("content-length")) || 0;
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error("no body");
-
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-
-    chunks.push(value);
-    loaded += value.length;
-    if (total > 0) {
-      onProgress(Math.min(0.78, (loaded / total) * 0.78));
-    }
-  }
-
-  const bytes = new Uint8Array(loaded);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-
-  return bytes.buffer;
-}
-
+/** Resolve once the source has real frame data, so the hero never reveals black. */
 function warmupVideoSrc(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
@@ -104,11 +61,10 @@ function warmupVideoSrc(src: string): Promise<void> {
 }
 
 /**
- * Fetch mobile scrub MP4. Prefer WebCodecs canvas scrub; fall back to blob + video seeks.
+ * Fetch the mobile scrub MP4 into a blob so scroll seeks never hit the network.
  */
 export function useHeroVideoPreload(enabled: boolean) {
   const [state, setState] = useState<HeroVideoPreloadState>(enabled ? IDLE : DONE);
-  const engineRef = useRef<Mp4ScrubEngine | null>(null);
   const blobRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -126,83 +82,51 @@ export function useHeroVideoPreload(enabled: boolean) {
     link.crossOrigin = "anonymous";
     document.head.appendChild(link);
 
-    const finishVideoFallback = async (buffer: ArrayBuffer) => {
-      const blob = new Blob([buffer], { type: "video/mp4" });
-      const url = URL.createObjectURL(blob);
-      blobRef.current = url;
-
-      setState((current) => ({
-        ...current,
-        progress: Math.max(current.progress, 0.9),
-      }));
-
-      await warmupVideoSrc(url);
-      if (cancelled) return;
-
-      setState({
-        ready: true,
-        progress: 1,
-        error: null,
-        engine: null,
-        videoSrc: url,
-        mode: "video",
-      });
-    };
-
     const load = async () => {
       try {
-        const buffer = await fetchScrubMp4((progress) => {
-          if (!cancelled) {
-            setState((current) => ({ ...current, progress }));
-          }
-        });
+        const res = await fetch(HERO_MOBILE_SCRUB_VIDEO, { cache: "force-cache" });
+        if (!res.ok) throw new Error(`fetch ${res.status}`);
 
-        if (cancelled) return;
+        const total = Number(res.headers.get("content-length")) || 0;
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("no body");
 
-        if (supportsWebCodecs()) {
-          try {
-            const engine = await Mp4ScrubEngine.create(
-              buffer,
-              (progress) => {
-                if (!cancelled) {
-                  setState((current) => ({ ...current, progress }));
-                }
-              },
-              MOBILE_WEBCODECS_PREWARM_FRAMES,
-            );
+        const chunks: BlobPart[] = [];
+        let loaded = 0;
 
-            if (cancelled) {
-              engine.close();
-              return;
-            }
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (!value) continue;
 
-            engineRef.current = engine;
-            setState({
-              ready: true,
-              progress: 1,
-              error: null,
-              engine,
-              videoSrc: null,
-              mode: "webcodecs",
-            });
-            return;
-          } catch (error) {
-            console.warn("WebCodecs mobile scrub failed; using video fallback.", error);
+          chunks.push(value);
+          loaded += value.length;
+          if (!cancelled && total > 0) {
+            setState((current) => ({
+              ...current,
+              progress: Math.min(0.9, (loaded / total) * 0.9),
+            }));
           }
         }
 
         if (cancelled) return;
-        await finishVideoFallback(buffer);
+
+        const url = URL.createObjectURL(new Blob(chunks, { type: "video/mp4" }));
+        blobRef.current = url;
+
+        await warmupVideoSrc(url);
+        if (cancelled) return;
+
+        setState({ ready: true, progress: 1, error: null, src: url });
       } catch (error) {
         if (cancelled) return;
         console.error(error);
+        // Fall back to the network URL so the hero still renders.
         setState({
           ready: true,
-          progress: 0,
-          error: `Failed to load ${HERO_MOBILE_SCRUB_VIDEO}`,
-          engine: null,
-          videoSrc: HERO_MOBILE_SCRUB_VIDEO,
-          mode: "video",
+          progress: 1,
+          error: null,
+          src: HERO_MOBILE_SCRUB_VIDEO,
         });
       }
     };
@@ -212,8 +136,6 @@ export function useHeroVideoPreload(enabled: boolean) {
     return () => {
       cancelled = true;
       link.remove();
-      engineRef.current?.close();
-      engineRef.current = null;
       if (blobRef.current) {
         URL.revokeObjectURL(blobRef.current);
         blobRef.current = null;

@@ -337,7 +337,9 @@ export function ScrollHero() {
               isMobile={isMobile}
             />
 
-            <HeroSideCopy progress={driveProgress} />
+            <HeroSideCopy
+              progress={isMobile ? scrollYProgress : driveProgress}
+            />
 
             <ScrollCue
               scrollProgress={driveProgress}

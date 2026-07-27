@@ -14,10 +14,6 @@ const GOLD = "#c4a574";
 const LETTER_SHADOW =
   "0 0 2px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.85), 0 5px 18px rgba(0,0,0,0.65), 0 10px 32px rgba(0,0,0,0.45), 0 16px 48px rgba(0,0,0,0.28)";
 
-/** Lighter shadow stack on phones — heavy multi-layer shadows cost compositing. */
-const LETTER_SHADOW_MOBILE =
-  "0 1px 2px rgba(0,0,0,0.95), 0 3px 10px rgba(0,0,0,0.55)";
-
 function smoothstep(e: number) {
   const t = Math.min(1, Math.max(0, e));
   return t * t * (3 - 2 * t);
@@ -32,7 +28,7 @@ type SideBlurb = {
   bodyEmph: string[];
   appear: [number, number];
   vanish: [number, number];
-  /** Desktop: mid = left-rail center; low = lower left. Mobile: mid = top-right; low = bottom-left. */
+  /** Desktop: mid = left-rail center; low = lower left. Mobile: both share one centered low slot. */
   align: "mid" | "low";
   /** Keep the full title on a single line. */
   titleNowrap?: boolean;
@@ -99,17 +95,26 @@ function buildBodyTokens(blurb: SideBlurb): WordToken[] {
 }
 
 /**
- * Clean editorial transition: fade + short rise on enter,
- * fade + soft lift on exit.
+ * Desktop: fade + short rise on enter, fade + soft lift on exit.
+ * Mobile (`inPlace`): opacity only — no translate, no staggered lag.
  */
 function useBlurbMotion(
   progress: MotionValue<number>,
   blurb: SideBlurb,
   lag = 0,
+  inPlace = false,
 ) {
   const opacity = useTransform(progress, (p) => {
     const [a0, a1] = blurb.appear;
     const [v0, v1] = blurb.vanish;
+    if (inPlace) {
+      // Short in-place fade; title + body share the same window (lag ignored).
+      if (p < a0) return 0;
+      if (p < a1) return (p - a0) / Math.max(0.001, a1 - a0);
+      if (p < v0) return 1;
+      if (p < v1) return 1 - (p - v0) / Math.max(0.001, v1 - v0);
+      return 0;
+    }
     const appearStart = a0 + (a1 - a0) * lag;
     const appearEnd = a1 + (a1 - a0) * lag * 0.15;
     const vanishStart = v0 + (v1 - v0) * lag * 0.2;
@@ -127,6 +132,7 @@ function useBlurbMotion(
   });
 
   const y = useTransform(progress, (p) => {
+    if (inPlace) return 0;
     const [a0, a1] = blurb.appear;
     const [v0, v1] = blurb.vanish;
     const appearStart = a0 + (a1 - a0) * lag;
@@ -228,35 +234,32 @@ function SideBlurbBlock({
   const titleTokens = useMemo(() => buildTitleTokens(blurb), [blurb]);
   const bodyTokens = useMemo(() => buildBodyTokens(blurb), [blurb]);
 
-  const titleMotion = useBlurbMotion(progress, blurb, 0);
-  const bodyMotion = useBlurbMotion(progress, blurb, 0.18);
-  const letterShadow = isMobile ? LETTER_SHADOW_MOBILE : LETTER_SHADOW;
+  const titleMotion = useBlurbMotion(progress, blurb, 0, isMobile);
+  const bodyMotion = useBlurbMotion(
+    progress,
+    blurb,
+    isMobile ? 0 : 0.18,
+    isMobile,
+  );
+  const letterShadow = LETTER_SHADOW;
 
   const isLow = blurb.align === "low";
 
+  // Mobile: both blurbs share one raised, horizontally centered slot.
+  const mobileSlotStyle = {
+    top: "auto",
+    bottom: "clamp(5.75rem, 15vmin + 1.75rem, 9rem)",
+    left: 0,
+    right: 0,
+    marginLeft: "auto",
+    marginRight: "auto",
+    width: "min(100%, clamp(15.5rem, 78vmin, 22rem))",
+    justifyContent: "flex-end" as const,
+    alignItems: "center" as const,
+  };
+
   const slotStyle = isMobile
-    ? isLow
-      ? {
-          // Bottom-left — explicit insets (abs kids ignore parent padding)
-          top: "auto",
-          bottom: "clamp(4.5rem, 11vmin + 1.5rem, 7rem)",
-          left: "clamp(2.5rem, 8vmin + 1.25rem, 3.75rem)",
-          right: "auto",
-          width: "min(100%, clamp(15.5rem, 72vmin, 21rem))",
-          justifyContent: "flex-end" as const,
-          alignItems: "flex-start" as const,
-        }
-      : {
-          // Top-right — explicit insets (abs kids ignore parent padding)
-          // Match logo top-8; slight lift so cap-height meets logo top
-          top: "1.82rem",
-          bottom: "auto",
-          left: "auto",
-          right: "clamp(0.2rem, 0.8vmin + 0.1rem, 0.5rem)",
-          width: "min(100%, clamp(15.5rem, 72vmin, 21rem))",
-          justifyContent: "flex-start" as const,
-          alignItems: "flex-start" as const,
-        }
+    ? mobileSlotStyle
     : isLow
       ? {
           top: "clamp(58%, 63vh, 70%)",
@@ -279,7 +282,7 @@ function SideBlurbBlock({
         style={
           isMobile
             ? {
-                textAlign: "left",
+                textAlign: "center",
                 width: "100%",
               }
             : undefined
@@ -289,13 +292,11 @@ function SideBlurbBlock({
           className="font-serif font-bold tracking-normal text-white [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
           style={{
             opacity: titleMotion.opacity,
-            y: titleMotion.y,
+            ...(isMobile ? null : { y: titleMotion.y }),
             fontSize: isMobile
               ? "clamp(1.45rem, 0.55rem + 5.4vmin, 2.45rem)"
               : "clamp(1.85rem, 0.55rem + 4.8vmin, 5rem)",
             lineHeight: 1.15,
-            // Optical: pull cap-height up to match logo top (serif leading)
-            ...(isMobile ? { marginTop: "-0.18em" } : null),
             ...(blurb.titleNowrap ? { whiteSpace: "nowrap" as const } : null),
           }}
         >
@@ -305,7 +306,7 @@ function SideBlurbBlock({
           className="font-marcellus mt-[0.9em] font-normal text-white [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
           style={{
             opacity: bodyMotion.opacity,
-            y: bodyMotion.y,
+            ...(isMobile ? null : { y: bodyMotion.y }),
             fontSize: isMobile
               ? "clamp(0.95rem, 0.4rem + 3.1vmin, 1.35rem)"
               : "clamp(1.2rem, 0.45rem + 2.85vmin, 2.15rem)",
@@ -331,7 +332,7 @@ type HeroSideCopyProps = {
 
 /**
  * Desktop: left-rail copy with fluid vmin scaling.
- * Mobile: first blurb top-right (left-aligned), second bottom-left — logo-like fluid insets.
+ * Mobile: both blurbs share one raised, centered slot with centered text.
  */
 export function HeroSideCopy({ progress }: HeroSideCopyProps) {
   const isMobile = useIsMobile();

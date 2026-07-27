@@ -9,18 +9,30 @@ export const SCRUB_HANDOFF_START = 0.78;
 
 /**
  * Half-width of the decoded sliding window around the playhead.
- * Peak decoded ≈ 2 * PRELOAD_WINDOW + 1 (~65).
+ * Peak decoded is capped by PRELOAD_MAX_DECODED (budget eviction).
  */
-export const PRELOAD_WINDOW = 32;
+export const PRELOAD_WINDOW = 40;
+
+/** Extra frames loaded in the current scroll direction (asymmetric prefetch). */
+export const PRELOAD_AHEAD_BOOST = 56;
+
+/**
+ * Hard cap on decoded frames kept in RAM. Soft-evict farthest from the
+ * playhead when over budget (trail survives fast jumps without O(N) decode).
+ */
+export const PRELOAD_MAX_DECODED = 140;
 
 /**
  * Runtime decode long-edge cap. Extract may keep 4K on disk; decoded
  * bitmaps are resized to this so the sliding window stays RAM-safe.
  */
-export const DECODE_MAX_WIDTH = 1920;
+export const DECODE_MAX_WIDTH = 1600;
 
 /** Parallel in-flight frame fetches (same local + production path). */
-export const PRELOAD_MAX_CONCURRENT = 8;
+export const PRELOAD_MAX_CONCURRENT = 16;
+
+/** Max extra ahead frames added from scroll velocity. */
+export const PRELOAD_VELOCITY_AHEAD_MAX = 72;
 
 /** Cap retina backing store */
 export const CANVAS_MAX_DPR = 2;

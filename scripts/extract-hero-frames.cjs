@@ -18,8 +18,8 @@ const VARIANTS = [
     id: "desktop",
     source: path.join(VIDEOS, "hero-kling.mp4"),
     outDir: path.join(OUT, "desktop"),
-    // 1920 keeps scrub decode/fetch fluid; sources may be 4K+.
-    maxWidth: 1920,
+    // 1440p (height) — never scale below; never upscale.
+    maxHeight: 1440,
   },
   {
     id: "mobile",
@@ -134,7 +134,18 @@ function extractVariant(v) {
 
   const meta = probe(v.source);
   const plan = computeExtractPlan(meta);
-  const scaleW = Math.min(meta.width || v.maxWidth, v.maxWidth);
+  // Prefer height cap (1440p) when set; else width cap. Never upscale.
+  let scaleFilter;
+  let scaleLabel;
+  if (v.maxHeight) {
+    const scaleH = Math.min(meta.height || v.maxHeight, v.maxHeight);
+    scaleFilter = `scale=-2:${scaleH}:flags=lanczos`;
+    scaleLabel = `-2:${scaleH}`;
+  } else {
+    const scaleW = Math.min(meta.width || v.maxWidth, v.maxWidth);
+    scaleFilter = `scale=${scaleW}:-2:flags=lanczos`;
+    scaleLabel = `${scaleW}:-2`;
+  }
   const outPattern = path.join(v.outDir, "frame-%05d.webp");
 
   console.log(`\n=== ${v.id} ===`);
@@ -142,7 +153,7 @@ function extractVariant(v) {
     `Source: ${v.source} (${meta.width}x${meta.height}, ${meta.duration.toFixed(2)}s, ${meta.fps.toFixed(3)} fps, nb_frames=${meta.nbFrames || "n/a"})`,
   );
   console.log(
-    `Plan: extractFps=${plan.extractFps.toFixed(4)}, targetFrames=${plan.frameCount}${plan.capped ? " (capped)" : " (native)"}, scale=${scaleW}:-2`,
+    `Plan: extractFps=${plan.extractFps.toFixed(4)}, targetFrames=${plan.frameCount}${plan.capped ? " (capped)" : " (native)"}, scale=${scaleLabel}`,
   );
 
   run(
@@ -151,7 +162,7 @@ function extractVariant(v) {
       "-i",
       v.source,
       "-vf",
-      `fps=${plan.extractFps},scale=${scaleW}:-2:flags=lanczos`,
+      `fps=${plan.extractFps},${scaleFilter}`,
       "-frames:v",
       String(plan.frameCount),
       "-c:v",

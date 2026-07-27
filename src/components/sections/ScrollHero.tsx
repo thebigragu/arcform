@@ -34,22 +34,22 @@ function MobileHeroBottomFade({
 }: {
   scrollProgress: MotionValue<number>;
 }) {
-  // Cheaper than mask-image on the full hero plane — same bottom vignette feel.
+  // Cheaper than mask-image — solid black plate behind contact through Begin.
   const opacity = useTransform(
     scrollProgress,
     [
-      SCRUB_HANDOFF_START + 0.04,
-      SCRUB_HANDOFF_START + 0.1,
-      SCRUB_HANDOFF_START + 0.16,
-      SCRUB_HANDOFF_START + 0.2,
+      SCRUB_HANDOFF_START,
+      SCRUB_HANDOFF_START + 0.06,
+      SCRUB_HANDOFF_START + 0.12,
+      SCRUB_HANDOFF_START + 0.18,
       1,
     ],
-    [0, 0.42, 0.68, 0.82, 0.9],
+    [0, 0.62, 0.88, 0.96, 1],
   );
 
   return (
     <motion.div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[62%] bg-gradient-to-t from-[#08090b] from-25% via-[#08090b]/55 via-55% to-transparent"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[88%] bg-gradient-to-t from-[#08090b] from-[38%] via-[#08090b] via-[70%] to-transparent"
       style={{ opacity }}
       aria-hidden
     />

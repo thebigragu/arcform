@@ -12,7 +12,8 @@ import {
   SCRUB_HANDOFF_START,
   VIDEO_HANDOFF,
 } from "@/lib/hero-sequence/config";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useScrollScrubSmooth } from "@/hooks/useScrollScrubSmooth";
+import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
   motion,
   useMotionTemplate,
@@ -148,7 +149,8 @@ export function ScrollHero() {
   const scrubRef = useRef<HTMLDivElement>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
-  const isMobile = useIsMobile();
+  const mobileHero = useHeroMobileVideo();
+  const isMobile = mobileHero ?? true;
   const {
     images,
     ready: framesReady,
@@ -161,17 +163,18 @@ export function ScrollHero() {
     offset: ["start start", "end end"],
   });
 
-  // Soft spring so fast flicks still play side copy / contact through.
+  // Desktop: soft spring on UI. Mobile: GSAP-style scrub smooth (no spring on hero plane).
   const sprungProgress = useSpring(scrollYProgress, {
-    stiffness: isMobile ? 170 : 130,
-    damping: isMobile ? 32 : 28,
-    mass: isMobile ? 0.14 : 0.2,
+    stiffness: 130,
+    damping: 28,
+    mass: 0.2,
     restDelta: 0.00005,
     restSpeed: 0.00005,
   });
-  const driveProgress = sprungProgress;
+  const smoothedProgress = useScrollScrubSmooth(scrollYProgress, isMobile);
+  const uiProgress = isMobile ? smoothedProgress : sprungProgress;
 
-  // Frame scrub must track raw scroll — springed progress outruns the cache.
+  // Frame scrub must track raw scroll — smoothed UI must not outrun video.
   const frameProgress = useTransform(scrollYProgress, (p) => {
     if (p <= SCRUB_HANDOFF_START) {
       return (p / SCRUB_HANDOFF_START) * VIDEO_HANDOFF;
@@ -186,7 +189,7 @@ export function ScrollHero() {
     playheadRef,
   );
 
-  const stickyLift = useTransform(driveProgress, (p) => {
+  const stickyLift = useTransform(scrollYProgress, (p) => {
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.12;
@@ -204,7 +207,7 @@ export function ScrollHero() {
   });
 
   const heroMask = useTransform(
-    driveProgress,
+    uiProgress,
     [
       0,
       SCRUB_HANDOFF_START + 0.04,
@@ -222,9 +225,9 @@ export function ScrollHero() {
       "linear-gradient(to bottom, #000 0%, #000 28%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.16) 66%, rgba(0,0,0,0.03) 84%, transparent 100%)",
     ],
   );
-  const videoFade = useTransform(driveProgress, [0, 1], [1, 1]);
+  const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
 
-  const contactParallax = useTransform(driveProgress, (p) => {
+  const contactParallax = useTransform(uiProgress, (p) => {
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.14;
@@ -243,7 +246,7 @@ export function ScrollHero() {
     return mid + (to - mid) * t;
   });
   const contactOpacity = useTransform(
-    driveProgress,
+    uiProgress,
     [SCRUB_HANDOFF_START, SCRUB_HANDOFF_START + 0.12, SCRUB_HANDOFF_START + 0.2, 1],
     [0, 0.45, 1, 1],
   );
@@ -269,7 +272,7 @@ export function ScrollHero() {
         <div className="relative inline-flex items-center justify-center">
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[42%] -z-10 h-[170%] w-[190%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:h-[200%] md:w-[220%] md:blur-3xl"
+            className="pointer-events-none absolute left-1/2 top-[42%] -z-10 hidden h-[200%] w-[220%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl md:block"
             style={{
               background:
                 "radial-gradient(ellipse 58% 52% at 50% 45%, rgba(26,91,104,0.75) 0%, rgba(26,91,104,0.38) 32%, rgba(42,122,140,0.14) 52%, transparent 72%)",
@@ -282,7 +285,7 @@ export function ScrollHero() {
           />
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[40%] -z-10 h-[130%] w-[145%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl md:h-[150%] md:w-[165%] md:blur-2xl"
+            className="pointer-events-none absolute left-1/2 top-[40%] -z-10 hidden h-[150%] w-[165%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl md:block"
             style={{
               background:
                 "radial-gradient(circle at 50% 42%, rgba(42,122,140,0.7) 0%, rgba(26,91,104,0.4) 38%, rgba(26,91,104,0.12) 62%, transparent 76%)",
@@ -295,7 +298,7 @@ export function ScrollHero() {
           />
           <motion.span
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[38%] -z-10 h-[90%] w-[105%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-lg md:h-[95%] md:w-[110%] md:blur-xl"
+            className="pointer-events-none absolute left-1/2 top-[38%] -z-10 hidden h-[95%] w-[110%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-xl md:block"
             style={{
               background:
                 "radial-gradient(circle at 50% 40%, rgba(58,140,155,0.55) 0%, rgba(26,91,104,0.32) 45%, transparent 70%)",
@@ -324,7 +327,7 @@ export function ScrollHero() {
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <motion.div
             ref={heroFrameRef}
-            className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
+            className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] md:will-change-transform"
             style={{
               y: stickyLift,
             }}
@@ -340,18 +343,16 @@ export function ScrollHero() {
                 images={images}
                 targetFrameIndex={targetFrameIndex}
                 opacity={videoFade}
-                scrollProgress={driveProgress}
+                scrollProgress={uiProgress}
                 enabled={framesReady}
                 isMobile={false}
               />
             )}
 
-            <HeroSideCopy
-              progress={isMobile ? scrollYProgress : driveProgress}
-            />
+            <HeroSideCopy progress={uiProgress} />
 
             <ScrollCue
-              scrollProgress={driveProgress}
+              scrollProgress={uiProgress}
               isMobile={isMobile}
             />
           </motion.div>

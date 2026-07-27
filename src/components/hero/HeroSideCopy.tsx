@@ -1,6 +1,6 @@
 "use client";
 
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
   motion,
   useTransform,
@@ -335,7 +335,8 @@ type HeroSideCopyProps = {
  * Mobile: both blurbs share one raised, centered slot with centered text.
  */
 export function HeroSideCopy({ progress }: HeroSideCopyProps) {
-  const isMobile = useIsMobile();
+  const mobileHero = useHeroMobileVideo();
+  const isMobile = mobileHero ?? true;
 
   return (
     <div

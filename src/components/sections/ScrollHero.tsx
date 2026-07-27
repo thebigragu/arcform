@@ -135,12 +135,12 @@ function MobileHeroBottomFade({
       SCRUB_HANDOFF_START + 0.18,
       1,
     ],
-    [0, 0.62, 0.88, 0.96, 1],
+    [0, 0.48, 0.7, 0.82, 0.88],
   );
 
   return (
     <motion.div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[88%] bg-gradient-to-t from-[#08090b] from-[38%] via-[#08090b] via-[70%] to-transparent"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[70%] bg-gradient-to-t from-[#08090b] from-[28%] via-[#08090b]/60 via-[56%] to-transparent"
       style={{ opacity }}
       aria-hidden
     />

@@ -54,7 +54,7 @@ export function ContactModal({
             <div className="flex min-h-0 flex-1 flex-col px-5 pt-5 pb-0 sm:px-8 sm:pt-8 md:px-12 md:pt-10 lg:px-14">
               <div className="mb-4 flex shrink-0 items-start justify-between gap-3 sm:mb-6 md:mb-7">
                 <div className="min-w-0">
-                  <p className="text-[10px] tracking-[0.28em] text-white/45 uppercase sm:text-xs">
+                  <p className="text-[11px] tracking-[0.28em] text-white/45 uppercase sm:text-sm">
                     Contact
                   </p>
                   <h2
@@ -66,14 +66,14 @@ export function ContactModal({
                       touch
                     </span>
                   </h2>
-                  <p className="mt-1.5 text-xs text-white/60 sm:mt-2 sm:text-sm">
+                  <p className="mt-1.5 text-sm text-white/60 sm:mt-2 sm:text-base">
                     Tell us what you&apos;re building — we&apos;ll reply with a clear next step.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/70 transition hover:border-white/35 hover:text-white"
+                  className="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-base text-white/70 transition hover:border-white/35 hover:text-white"
                   aria-label="Close"
                 >
                   Close

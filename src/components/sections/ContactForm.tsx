@@ -81,15 +81,15 @@ export function ContactForm() {
   if (status === "success") {
     return (
       <div className="flex min-h-0 flex-1 flex-col justify-center rounded-[1.5rem] border border-border bg-bg-elevated p-6 text-center sm:p-10">
-        <h2 className="font-display text-3xl leading-[1.25] tracking-tight pb-[0.1em]">
+        <h2 className="font-display text-3xl leading-[1.25] tracking-tight pb-[0.1em] sm:text-4xl">
           Message sent
         </h2>
-        <p className="mt-3 text-fg-muted">
+        <p className="mt-3 text-base text-fg-muted sm:text-lg">
           Thanks — we&apos;ll review your note and reply soon, usually within one to two business
           days.
         </p>
         <div className="mt-8 flex justify-center">
-          <Button type="button" variant="secondary" onClick={() => setStatus("idle")}>
+          <Button type="button" variant="secondary" onClick={() => setStatus("idle")} className="text-base sm:text-lg">
             Send another
           </Button>
         </div>
@@ -168,7 +168,7 @@ export function ContactForm() {
         </Field>
 
         {status === "error" && (
-          <p className="text-sm text-red-400">
+          <p className="text-base text-red-400">
             {errorMessage || "Something went wrong."} You can also email{" "}
             <a className="underline" href={`mailto:${SITE.email}`}>
               {SITE.email}
@@ -182,7 +182,7 @@ export function ContactForm() {
         <Button
           type="submit"
           disabled={status === "submitting"}
-          className="min-h-11 w-full sm:min-h-12 sm:w-auto"
+          className="min-h-11 w-full text-base sm:min-h-12 sm:w-auto sm:text-lg"
         >
           {status === "submitting" ? "Sending…" : "Send inquiry"}
         </Button>
@@ -192,7 +192,7 @@ export function ContactForm() {
 }
 
 const inputClass =
-  "w-full rounded-2xl border border-border bg-bg-elevated/60 px-3.5 py-2.5 text-base text-fg outline-none transition focus:border-accent-blue/50 sm:px-4 sm:py-3 md:text-sm";
+  "w-full rounded-2xl border border-border bg-bg-elevated/60 px-3.5 py-2.5 text-base text-fg outline-none transition focus:border-accent-blue/50 sm:px-4 sm:py-3 sm:text-lg";
 
 function Field({
   label,
@@ -206,11 +206,11 @@ function Field({
   return (
     <label className="block space-y-1.5">
       <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="text-[10px] tracking-[0.2em] text-fg-muted uppercase sm:text-xs">
+        <span className="text-[11px] tracking-[0.2em] text-fg-muted uppercase sm:text-sm">
           {label}
         </span>
         {error ? (
-          <span className="text-[11px] text-red-400 normal-case tracking-normal sm:text-xs">
+          <span className="text-xs text-red-400 normal-case tracking-normal sm:text-sm">
             {error}
           </span>
         ) : null}

@@ -84,6 +84,10 @@ body {
   font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
 }
 
+.font-marcellus {
+  font-family: var(--font-marcellus), "Palatino Linotype", Palatino, serif;
+}
+
 .container-shell {
   width: 100%;
   max-width: var(--max-w);

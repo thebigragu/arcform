@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  DECODE_ALL_FRAMES,
+  DECODE_ALL_MAX_FRAMES,
   DECODE_MAX_WIDTH,
   PRELOAD_AHEAD_BOOST,
   PRELOAD_MAX_CONCURRENT,
@@ -35,7 +37,8 @@ const EMPTY: PreloadState = {
 function decodeSize(manifest: HeroSequenceManifest) {
   const srcW = Math.max(1, manifest.width);
   const srcH = Math.max(1, manifest.height);
-  if (srcW <= DECODE_MAX_WIDTH) {
+  // null = native extract size (full 1440p on desktop).
+  if (DECODE_MAX_WIDTH == null || srcW <= DECODE_MAX_WIDTH) {
     return { w: srcW, h: srcH, resize: false as const };
   }
   const scale = DECODE_MAX_WIDTH / srcW;
@@ -52,8 +55,9 @@ type Inflight = {
 };
 
 /**
- * Sliding-window frame cache: velocity-aware lookahead, jump bridging,
- * abortable decodes, and budget eviction. Same path locally and on Vercel.
+ * Frame cache for scroll scrub.
+ * - DECODE_ALL_FRAMES: load every frame, never evict (skill exception).
+ * - Otherwise: velocity-aware sliding window with budget eviction.
  */
 export function useFramePreload(
   manifest: HeroSequenceManifest | null,
@@ -78,6 +82,8 @@ export function useFramePreload(
     }
 
     const count = manifest.frameCount;
+    const decodeAll =
+      DECODE_ALL_FRAMES && count <= DECODE_ALL_MAX_FRAMES;
     const images: (ScrubFrame | undefined)[] = new Array(count);
     const inFlight = new Map<number, Inflight>();
     const queued = new Set<number>();
@@ -89,7 +95,6 @@ export function useFramePreload(
     let velocityEma = 0;
     let activeLoads = 0;
     let decodedCount = 0;
-    /** Priority indices (playhead / bridge), then normal dense band. */
     const hiQueue: number[] = [];
     const loQueue: number[] = [];
 
@@ -128,6 +133,7 @@ export function useFramePreload(
           publish(false);
         }
       }
+      // After ready: mutate images in place only — avoid 360 setState storms.
     };
 
     const aheadExtra = () =>
@@ -137,6 +143,9 @@ export function useFramePreload(
       );
 
     const loadBounds = (center: number, dir: number) => {
+      if (decodeAll) {
+        return { lo: 0, hi: count - 1 };
+      }
       const back = PRELOAD_WINDOW;
       const ahead = PRELOAD_WINDOW + PRELOAD_AHEAD_BOOST + aheadExtra();
       if (dir >= 0) {
@@ -152,9 +161,12 @@ export function useFramePreload(
     };
 
     const usefulDist = (center: number) =>
-      PRELOAD_WINDOW + PRELOAD_AHEAD_BOOST + aheadExtra() + 48;
+      decodeAll
+        ? count
+        : PRELOAD_WINDOW + PRELOAD_AHEAD_BOOST + aheadExtra() + 48;
 
     const enforceBudget = (center: number, dir: number) => {
+      if (decodeAll) return;
       if (decodedCount <= PRELOAD_MAX_DECODED) return;
       const { lo, hi } = loadBounds(center, dir);
       const victims: { i: number; dist: number }[] = [];
@@ -162,7 +174,6 @@ export function useFramePreload(
         if (!images[i]) continue;
         if (i >= lo && i <= hi) continue;
         const behind = dir >= 0 ? i < center : i > center;
-        // Keep trail longer than speculative ahead-outside-band.
         const dist = Math.abs(i - center) + (behind ? 0 : 500);
         victims.push({ i, dist });
       }
@@ -175,10 +186,12 @@ export function useFramePreload(
 
     const storeFrame = (index: number, frame: ScrubFrame) => {
       const c = playheadRef.current ?? 0;
-      const { lo, hi } = loadBounds(c, lastScrollDir);
-      if (Math.abs(index - c) > usefulDist(c) && (index < lo || index > hi)) {
-        releaseScrubFrame(frame);
-        return;
+      if (!decodeAll) {
+        const { lo, hi } = loadBounds(c, lastScrollDir);
+        if (Math.abs(index - c) > usefulDist(c) && (index < lo || index > hi)) {
+          releaseScrubFrame(frame);
+          return;
+        }
       }
       if (!images[index]) decodedCount += 1;
       else releaseScrubFrame(images[index]);
@@ -214,17 +227,15 @@ export function useFramePreload(
     const loadViaBitmap = async (url: string, signal: AbortSignal) => {
       const res = await fetch(url, {
         signal,
-        // Chromium: prefer playhead-adjacent frames when contended.
         priority: "high",
       } as RequestInit);
       if (!res.ok) throw new Error(`frame ${res.status}`);
       const blob = await res.blob();
       if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-      // "medium" is meaningfully faster than "high" at 1600px with little visual cost.
       return createImageBitmap(blob, {
         resizeWidth: targetSize.w,
         resizeHeight: targetSize.h,
-        resizeQuality: "medium",
+        resizeQuality: "high",
       });
     };
 
@@ -308,7 +319,6 @@ export function useFramePreload(
         if (inFlight.has(i)) continue;
         if (queued.has(i)) {
           if (priority && !hiQueue.includes(i)) {
-            // Promote from lo → hi.
             const loIdx = loQueue.indexOf(i);
             if (loIdx >= 0) loQueue.splice(loIdx, 1);
             hiQueue.push(i);
@@ -324,7 +334,6 @@ export function useFramePreload(
     const bridgeIndices = (from: number, to: number, speed: number) => {
       const span = Math.abs(to - from);
       if (span <= 1) return [] as number[];
-      // Faster scrub → denser bridge so monotonic draw has more stepping stones.
       const maxSteps = Math.min(span, speed > 12 ? 64 : speed > 4 ? 48 : 32);
       const stride = Math.max(1, Math.ceil(span / maxSteps));
       const dir = to >= from ? 1 : -1;
@@ -336,6 +345,8 @@ export function useFramePreload(
     };
 
     const pruneStaleWork = (center: number, lo: number, hi: number) => {
+      if (decodeAll) return; // never abort / drop queued work in full-decode mode
+
       const keepLo = Math.max(0, lo - 32);
       const keepHi = Math.min(count - 1, hi + 32);
       const maxD = usefulDist(center);
@@ -355,7 +366,6 @@ export function useFramePreload(
         }
       }
 
-      // Abort decodes that are no longer near the playhead — frees concurrent slots.
       for (const [idx] of inFlight) {
         if (Math.abs(idx - center) > maxD && (idx < keepLo || idx > keepHi)) {
           abortLoad(idx);
@@ -363,8 +373,34 @@ export function useFramePreload(
       }
     };
 
+    let decodeAllBootstrapped = false;
+
     const ensureWindow = (center: number) => {
       const c = Math.min(count - 1, Math.max(0, center | 0));
+
+      if (decodeAll) {
+        if (c !== lastCenter) {
+          if (lastCenter >= 0) {
+            lastScrollDir = c >= lastCenter ? 1 : -1;
+          }
+          lastCenter = c;
+          enqueue([c], true);
+        }
+        if (!decodeAllBootstrapped) {
+          decodeAllBootstrapped = true;
+          const first: number[] = [];
+          const rest: number[] = [];
+          for (let i = 0; i < count; i++) {
+            if (i <= initialHi) first.push(i);
+            else rest.push(i);
+          }
+          enqueue(first, true);
+          enqueue(rest);
+        }
+        pump();
+        return;
+      }
+
       if (c === lastCenter) {
         pump();
         return;
@@ -441,6 +477,7 @@ export function useFramePreload(
       };
     }
 
+    // Kick off: first window (loader), then full sequence if decode-all.
     ensureWindow(playheadRef.current ?? 0);
 
     let raf = 0;

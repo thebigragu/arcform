@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Geist, Geist_Mono, Syne } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  Geist,
+  Geist_Mono,
+  Marcellus,
+  Syne,
+} from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
@@ -30,6 +36,12 @@ const cormorant = Cormorant_Garamond({
   style: ["normal", "italic"],
 });
 
+const marcellus = Marcellus({
+  variable: "--font-marcellus",
+  subsets: ["latin"],
+  weight: ["400"],
+});
+
 export const metadata: Metadata = defaultMetadata;
 
 export default function RootLayout({
@@ -41,7 +53,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${cormorant.variable} ${marcellus.variable} h-full antialiased`}
     >
       <body className="noise min-h-full flex flex-col bg-bg text-fg">
         <script

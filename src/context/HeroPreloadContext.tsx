@@ -32,8 +32,9 @@ type HeroPreloadContextValue = {
   manifest: HeroSequenceManifest | null;
   variant: "desktop" | "mobile" | null;
   heroRequired: boolean;
-  /** Shared playhead — desktop canvas preload reads; unused on mobile MP4. */
   playheadRef: MutableRefObject<number>;
+  /** Blob URL for mobile scrub — only set once fetch completes. */
+  mobileVideoSrc: string | null;
 };
 
 const HeroPreloadContext = createContext<HeroPreloadContextValue | null>(null);
@@ -127,6 +128,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         variant: null,
         heroRequired: false,
         playheadRef,
+        mobileVideoSrc: null,
       };
     }
 
@@ -140,6 +142,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         variant: null,
         heroRequired: true,
         playheadRef,
+        mobileVideoSrc: null,
       };
     }
 
@@ -153,6 +156,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
         variant: "mobile",
         heroRequired: true,
         playheadRef,
+        mobileVideoSrc: videoPreload.ready ? videoPreload.src : null,
       };
     }
 
@@ -165,6 +169,7 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
       variant: "desktop",
       heroRequired: true,
       playheadRef,
+      mobileVideoSrc: null,
     };
   }, [heroRequired, variantReady, isMobile, videoPreload, framePreload, manifest]);
 

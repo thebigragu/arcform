@@ -14,6 +14,9 @@ const GOLD = "#c4a574";
 const LETTER_SHADOW =
   "0 0 2px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.85), 0 5px 18px rgba(0,0,0,0.65), 0 10px 32px rgba(0,0,0,0.45), 0 16px 48px rgba(0,0,0,0.28)";
 
+const LETTER_SHADOW_MOBILE =
+  "0 1px 2px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.55)";
+
 function smoothstep(e: number) {
   const t = Math.min(1, Math.max(0, e));
   return t * t * (3 - 2 * t);
@@ -241,7 +244,7 @@ function SideBlurbBlock({
     isMobile ? 0 : 0.18,
     isMobile,
   );
-  const letterShadow = LETTER_SHADOW;
+  const letterShadow = isMobile ? LETTER_SHADOW_MOBILE : LETTER_SHADOW;
 
   const isLow = blurb.align === "low";
 

@@ -1,35 +1,36 @@
 "use client";
 
 import { HERO_MOBILE_SCRUB_POSTER, HERO_MOBILE_SCRUB_VIDEO } from "@/lib/hero-sequence/config";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type VideoPreloadState = {
   ready: boolean;
   progress: number;
   error: string | null;
-  duration: number;
+  /** Blob URL for the scrub clip — fully local seeks after fetch. */
+  src: string;
 };
 
 const IDLE: VideoPreloadState = {
   ready: false,
   progress: 0,
   error: null,
-  duration: 0,
+  src: HERO_MOBILE_SCRUB_VIDEO,
 };
 
 const DONE: VideoPreloadState = {
   ready: true,
   progress: 1,
   error: null,
-  duration: 0,
+  src: HERO_MOBILE_SCRUB_VIDEO,
 };
 
 /**
- * Warm the mobile scrub MP4 (metadata + enough buffer to scrub frame 0).
- * Uses a detached video element; the visible hero reuses the same URL from cache.
+ * Fetch mobile scrub MP4 into a blob URL once — one decode path, fast local seeks.
  */
 export function useHeroVideoPreload(enabled: boolean) {
   const [state, setState] = useState<VideoPreloadState>(enabled ? IDLE : DONE);
+  const blobRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -38,69 +39,73 @@ export function useHeroVideoPreload(enabled: boolean) {
     }
 
     let cancelled = false;
-    const video = document.createElement("video");
-    video.preload = "auto";
-    video.muted = true;
-    video.playsInline = true;
-    video.src = HERO_MOBILE_SCRUB_VIDEO;
 
     const link = document.createElement("link");
     link.rel = "preload";
-    link.as = "video";
+    link.as = "fetch";
     link.href = HERO_MOBILE_SCRUB_VIDEO;
+    link.crossOrigin = "anonymous";
     document.head.appendChild(link);
 
-    const publishProgress = () => {
-      if (cancelled || !video.duration || !Number.isFinite(video.duration)) return;
-      let buffered = 0;
-      if (video.buffered.length > 0) {
-        buffered = video.buffered.end(video.buffered.length - 1) / video.duration;
+    const load = async () => {
+      try {
+        const res = await fetch(HERO_MOBILE_SCRUB_VIDEO, { cache: "force-cache" });
+        if (!res.ok) throw new Error(`fetch ${res.status}`);
+        const total = Number(res.headers.get("content-length")) || 0;
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("no body");
+
+        const chunks: BlobPart[] = [];
+        let loaded = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+            loaded += value.length;
+            if (!cancelled && total > 0) {
+              setState((s) => ({
+                ...s,
+                progress: Math.min(0.99, loaded / total),
+              }));
+            }
+          }
+        }
+
+        if (cancelled) return;
+        const blob = new Blob(chunks, { type: "video/mp4" });
+        const url = URL.createObjectURL(blob);
+        blobRef.current = url;
+        setState({
+          ready: true,
+          progress: 1,
+          error: null,
+          src: url,
+        });
+      } catch (e) {
+        if (cancelled) return;
+        console.error(e);
+        setState({
+          ready: true,
+          progress: 0,
+          error: `Failed to load ${HERO_MOBILE_SCRUB_VIDEO}`,
+          src: HERO_MOBILE_SCRUB_VIDEO,
+        });
       }
-      setState((s) => ({
-        ...s,
-        progress: Math.min(1, buffered),
-        duration: video.duration,
-      }));
     };
 
-    const onReady = () => {
-      if (cancelled) return;
-      setState({
-        ready: true,
-        progress: 1,
-        error: null,
-        duration: video.duration || 0,
-      });
-    };
-
-    const onError = () => {
-      if (cancelled) return;
-      setState({
-        ready: true,
-        progress: 0,
-        error: `Failed to load ${HERO_MOBILE_SCRUB_VIDEO}`,
-        duration: 0,
-      });
-    };
-
-    video.addEventListener("loadedmetadata", publishProgress);
-    video.addEventListener("progress", publishProgress);
-    video.addEventListener("canplay", onReady);
-    video.addEventListener("error", onError);
-
-    video.load();
+    void load();
 
     return () => {
       cancelled = true;
-      video.removeEventListener("loadedmetadata", publishProgress);
-      video.removeEventListener("progress", publishProgress);
-      video.removeEventListener("canplay", onReady);
-      video.removeEventListener("error", onError);
-      video.removeAttribute("src");
-      video.load();
       link.remove();
+      if (blobRef.current) {
+        URL.revokeObjectURL(blobRef.current);
+        blobRef.current = null;
+      }
     };
   }, [enabled]);
 
-  return { ...state, poster: HERO_MOBILE_SCRUB_POSTER, src: HERO_MOBILE_SCRUB_VIDEO };
+  return { ...state, poster: HERO_MOBILE_SCRUB_POSTER };
 }

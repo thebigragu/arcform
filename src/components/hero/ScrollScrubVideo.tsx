@@ -1,17 +1,19 @@
 "use client";
 
 import { useVideoScrub } from "@/hooks/useVideoScrub";
-import { HERO_MOBILE_SCRUB_POSTER, HERO_MOBILE_SCRUB_VIDEO } from "@/lib/hero-sequence/config";
+import { HERO_MOBILE_SCRUB_POSTER } from "@/lib/hero-sequence/config";
 import { motion, type MotionValue } from "framer-motion";
 import { useRef } from "react";
 
 type ScrollScrubVideoProps = {
+  src: string;
   scrubProgress: MotionValue<number>;
   opacity: MotionValue<number>;
   enabled?: boolean;
 };
 
 export function ScrollScrubVideo({
+  src,
   scrubProgress,
   opacity,
   enabled = true,
@@ -22,19 +24,19 @@ export function ScrollScrubVideo({
 
   return (
     <motion.div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 overflow-hidden [contain:strict]"
       style={{ opacity }}
       aria-hidden
     >
       <video
         ref={videoRef}
-        src={HERO_MOBILE_SCRUB_VIDEO}
+        src={src}
         poster={HERO_MOBILE_SCRUB_POSTER}
         muted
         playsInline
         preload="auto"
         disablePictureInPicture
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover [transform:translateZ(0)]"
       />
     </motion.div>
   );

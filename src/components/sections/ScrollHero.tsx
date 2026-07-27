@@ -12,7 +12,6 @@ import {
   SCRUB_HANDOFF_START,
   VIDEO_HANDOFF,
 } from "@/lib/hero-sequence/config";
-import { useScrollScrubSmooth } from "@/hooks/useScrollScrubSmooth";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
   motion,
@@ -28,6 +27,36 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 function smoothstep(e: number) {
   return e * e * (3 - 2 * e);
+}
+
+function MobileScrollCue({
+  scrollProgress,
+}: {
+  scrollProgress: MotionValue<number>;
+}) {
+  const opacity = useTransform(
+    scrollProgress,
+    [0, 0.7, 0.82, 0.92, 1],
+    [1, 1, 0.55, 0, 0],
+  );
+
+  return (
+    <motion.div
+      className="pointer-events-none absolute bottom-[5.5rem] right-6 z-40 flex flex-col items-center gap-3"
+      style={{ opacity }}
+      aria-hidden
+    >
+      <span
+        className="font-marcellus text-[13px] font-semibold tracking-[0.38em] text-white uppercase"
+        style={{
+          textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.55)",
+        }}
+      >
+        Scroll
+      </span>
+      <div className="h-[52px] w-0.5 rounded-full bg-white/90" />
+    </motion.div>
+  );
 }
 
 function ScrollCue({
@@ -156,6 +185,7 @@ export function ScrollHero() {
     ready: framesReady,
     manifest,
     playheadRef,
+    mobileVideoSrc,
   } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
@@ -163,7 +193,7 @@ export function ScrollHero() {
     offset: ["start start", "end end"],
   });
 
-  // Desktop: soft spring on UI. Mobile: GSAP-style scrub smooth (no spring on hero plane).
+  // Desktop: soft spring on UI. Mobile: raw scroll (no extra rAF loops).
   const sprungProgress = useSpring(scrollYProgress, {
     stiffness: 130,
     damping: 28,
@@ -171,8 +201,7 @@ export function ScrollHero() {
     restDelta: 0.00005,
     restSpeed: 0.00005,
   });
-  const smoothedProgress = useScrollScrubSmooth(scrollYProgress, isMobile);
-  const uiProgress = isMobile ? smoothedProgress : sprungProgress;
+  const uiProgress = isMobile ? scrollYProgress : sprungProgress;
 
   // Frame scrub must track raw scroll — smoothed UI must not outrun video.
   const frameProgress = useTransform(scrollYProgress, (p) => {
@@ -190,6 +219,7 @@ export function ScrollHero() {
   );
 
   const stickyLift = useTransform(scrollYProgress, (p) => {
+    if (isMobile) return 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.12;
@@ -228,6 +258,7 @@ export function ScrollHero() {
   const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
 
   const contactParallax = useTransform(uiProgress, (p) => {
+    if (isMobile) return 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
     const b = SCRUB_HANDOFF_START + 0.14;
@@ -253,18 +284,20 @@ export function ScrollHero() {
 
   const heroFrameRef = useRef<HTMLDivElement>(null);
   useMotionValueEvent(heroMask, "change", (mask) => {
+    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
   });
   useEffect(() => {
+    if (isMobile) return;
     const el = heroFrameRef.current;
     if (!el) return;
     const mask = heroMask.get();
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask;
-  }, [heroMask]);
+  }, [heroMask, isMobile]);
 
   return (
     <>
@@ -328,17 +361,16 @@ export function ScrollHero() {
           <motion.div
             ref={heroFrameRef}
             className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] md:will-change-transform"
-            style={{
-              y: stickyLift,
-            }}
+            style={isMobile ? undefined : { y: stickyLift }}
           >
-            {isMobile ? (
+            {isMobile && framesReady && mobileVideoSrc ? (
               <ScrollScrubVideo
+                src={mobileVideoSrc}
                 scrubProgress={frameProgress}
                 opacity={videoFade}
                 enabled={framesReady}
               />
-            ) : (
+            ) : !isMobile ? (
               <ScrollScrubCanvas
                 images={images}
                 targetFrameIndex={targetFrameIndex}
@@ -347,14 +379,18 @@ export function ScrollHero() {
                 enabled={framesReady}
                 isMobile={false}
               />
-            )}
+            ) : null}
 
             <HeroSideCopy progress={uiProgress} />
 
-            <ScrollCue
-              scrollProgress={uiProgress}
-              isMobile={isMobile}
-            />
+            {isMobile ? (
+              <MobileScrollCue scrollProgress={uiProgress} />
+            ) : (
+              <ScrollCue
+                scrollProgress={uiProgress}
+                isMobile={false}
+              />
+            )}
           </motion.div>
 
           <motion.div
@@ -399,15 +435,25 @@ export function ScrollHero() {
               </p>
 
               <div className="mt-6 flex justify-center md:mt-8">
-                <Magnetic>
+                {isMobile ? (
                   <Button
                     type="button"
                     onClick={() => setContactOpen(true)}
-                    className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white md:text-lg"
+                    className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white"
                   >
                     Get in touch
                   </Button>
-                </Magnetic>
+                ) : (
+                  <Magnetic>
+                    <Button
+                      type="button"
+                      onClick={() => setContactOpen(true)}
+                      className="bg-white text-base text-[#0c0c0e] hover:bg-[#1a5b68] hover:text-white md:text-lg"
+                    >
+                      Get in touch
+                    </Button>
+                  </Magnetic>
+                )}
               </div>
             </div>
           </motion.div>

@@ -82,6 +82,8 @@ export function useFramePreload(
     pauseFillWhileScrolling?: boolean;
     /** ±frames around playhead always prioritized. */
     playheadBand?: number;
+    /** Wait until every frame is decoded before ready (mobile first-visit). */
+    readyWhenFullyDecoded?: boolean;
   },
 ) {
   const maxConcurrent = options?.maxConcurrent ?? PRELOAD_MAX_CONCURRENT;
@@ -93,6 +95,7 @@ export function useFramePreload(
   const loaderWindow = options?.loaderWindow ?? PRELOAD_WINDOW;
   const pauseFillWhileScrolling = options?.pauseFillWhileScrolling ?? false;
   const playheadBand = options?.playheadBand ?? 24;
+  const readyWhenFullyDecoded = options?.readyWhenFullyDecoded ?? false;
   const [state, setState] = useState<PreloadState>(EMPTY);
   const reducedRef = useRef(false);
 
@@ -134,13 +137,18 @@ export function useFramePreload(
 
     const publish = (ready: boolean, error: string | null = null) => {
       if (aborted) return;
-      setState({
-        images,
-        progress: ready
-          ? 1
+      const progress = ready
+        ? 1
+        : readyWhenFullyDecoded
+          ? count > 0
+            ? decodedCount / count
+            : 0
           : initialWindowSize > 0
             ? initialLoaded / initialWindowSize
-            : 0,
+            : 0;
+      setState({
+        images,
+        progress,
         ready,
         error,
       });
@@ -154,6 +162,17 @@ export function useFramePreload(
     };
 
     const bumpInitial = (index: number) => {
+      if (readyWhenFullyDecoded) {
+        if (!readyPublished) {
+          if (decodedCount >= count) {
+            readyPublished = true;
+            publish(true);
+          } else {
+            publish(false);
+          }
+        }
+        return;
+      }
       if (index <= initialHi) {
         initialLoaded += 1;
         if (!readyPublished && initialLoaded >= initialWindowSize) {
@@ -339,13 +358,18 @@ export function useFramePreload(
       return undefined;
     };
 
+    const isFillComplete = () => decodedCount >= count;
+
+    // C only after every frame is warm — never starve first-visit fill.
+    const mayPauseFill = () =>
+      pauseFillWhileScrolling && isFillComplete();
+
     const isScrolling = () =>
-      pauseFillWhileScrolling &&
-      performance.now() - lastScrollAt < SCROLL_IDLE_MS;
+      mayPauseFill() && performance.now() - lastScrollAt < SCROLL_IDLE_MS;
 
     const pump = () => {
       const scrolling = isScrolling();
-      // While scrolling: fewer parallel loads, playhead queue only.
+      // While scrolling (post-fill only): fewer parallel loads, playhead queue only.
       const cap = scrolling
         ? Math.min(maxConcurrent, 4)
         : maxConcurrent;
@@ -391,7 +415,7 @@ export function useFramePreload(
     };
 
     const abortFarInflight = (center: number) => {
-      if (!pauseFillWhileScrolling) return;
+      if (!mayPauseFill()) return;
       const keep = playheadBand + 12;
       for (const [idx] of inFlight) {
         if (Math.abs(idx - center) > keep) abortLoad(idx);
@@ -470,7 +494,7 @@ export function useFramePreload(
           // C: drop far decode work while finger is moving
           abortFarInflight(c);
         } else if (
-          pauseFillWhileScrolling &&
+          mayPauseFill() &&
           !isScrolling() &&
           !fillRequeued &&
           readyPublished
@@ -604,6 +628,7 @@ export function useFramePreload(
     loaderWindow,
     pauseFillWhileScrolling,
     playheadBand,
+    readyWhenFullyDecoded,
   ]);
 
   return state;

@@ -109,15 +109,16 @@ export function HeroPreloadProvider({ children }: { children: ReactNode }) {
   const isMobile = nextVariant === "mobile";
   const preload = useFramePreload(manifest, playheadRef, {
     enabled: heroRequired && !!manifest,
-    // Both variants: decode-all when N ≤ 400 (mobile sequence is ~720×1296×360).
+    // Both variants: decode-all when N ≤ 400 (mobile sequence is ~720×1294×360).
     decodeAll: true,
     maxConcurrent: isMobile
       ? PRELOAD_MAX_CONCURRENT_MOBILE
       : PRELOAD_MAX_CONCURRENT,
     maxDecodeWidth: isMobile ? DECODE_MAX_WIDTH_MOBILE : null,
-    // A: smaller first-window gate on mobile so the loader dismisses sooner.
+    // Desktop: first-window gate. Mobile: wait for all frames before ready.
     loaderWindow: isMobile ? PRELOAD_WINDOW_MOBILE : PRELOAD_WINDOW,
-    // B+C: playhead-first while fill runs; pause far fill while scrubbing.
+    readyWhenFullyDecoded: isMobile,
+    // B: playhead-first. C: only pauses fill after decode-all is complete.
     pauseFillWhileScrolling: isMobile,
     playheadBand: PRELOAD_PLAYHEAD_BAND,
   });

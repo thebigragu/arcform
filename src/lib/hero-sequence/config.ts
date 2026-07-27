@@ -24,7 +24,7 @@ export const DECODE_ALL_MAX_FRAMES = 400;
  */
 export const PRELOAD_WINDOW = 40;
 
-/** Smaller first-window loader gate on mobile — dismiss sooner (~21 frames). */
+/** Smaller first-window loader gate on mobile (unused when readyWhenFullyDecoded). */
 export const PRELOAD_WINDOW_MOBILE = 20;
 
 /** Playhead-priority band (±frames) loaded first during decode-all fill. */

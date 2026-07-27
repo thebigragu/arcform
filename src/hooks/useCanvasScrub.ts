@@ -87,6 +87,8 @@ type UseCanvasScrubOptions = {
   images: (ScrubFrame | undefined)[];
   targetFrameIndex: React.RefObject<number>;
   enabled?: boolean;
+  /** Cap devicePixelRatio (mobile uses a lower cap). */
+  maxDpr?: number;
 };
 
 /**
@@ -95,7 +97,12 @@ type UseCanvasScrubOptions = {
  */
 export function useCanvasScrub(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
-  { images, targetFrameIndex, enabled = true }: UseCanvasScrubOptions,
+  {
+    images,
+    targetFrameIndex,
+    enabled = true,
+    maxDpr = CANVAS_MAX_DPR,
+  }: UseCanvasScrubOptions,
 ) {
   const lastDrawn = useRef(-1);
   const layoutRef = useRef({ cssW: 0, cssH: 0, dpr: 1 });
@@ -112,14 +119,14 @@ export function useCanvasScrub(
 
     // Cover draws opaque full-bleed; skip clear between frames.
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "medium";
+    ctx.imageSmoothingQuality = maxDpr <= 1.5 ? "low" : "medium";
 
     const resize = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
       const cssW = parent.clientWidth;
       const cssH = parent.clientHeight;
-      const dpr = Math.min(CANVAS_MAX_DPR, window.devicePixelRatio || 1);
+      const dpr = Math.min(maxDpr, window.devicePixelRatio || 1);
       layoutRef.current = { cssW, cssH, dpr };
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
@@ -127,7 +134,7 @@ export function useCanvasScrub(
       canvas.style.height = `${cssH}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "medium";
+      ctx.imageSmoothingQuality = maxDpr <= 1.5 ? "low" : "medium";
       lastDrawn.current = -1;
     };
     resize();
@@ -166,5 +173,5 @@ export function useCanvasScrub(
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [canvasRef, images, targetFrameIndex, enabled]);
+  }, [canvasRef, images, targetFrameIndex, enabled, maxDpr]);
 }

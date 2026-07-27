@@ -2,6 +2,8 @@
 
 import { useCanvasScrub } from "@/hooks/useCanvasScrub";
 import {
+  CANVAS_MAX_DPR,
+  CANVAS_MAX_DPR_MOBILE,
   CANVAS_ROTATE_MAX,
   CANVAS_SCALE_DEPTH,
 } from "@/lib/hero-sequence/config";
@@ -15,6 +17,7 @@ type ScrollScrubCanvasProps = {
   opacity: MotionValue<number>;
   scrollProgress: MotionValue<number>;
   enabled?: boolean;
+  isMobile?: boolean;
 };
 
 export function ScrollScrubCanvas({
@@ -23,24 +26,35 @@ export function ScrollScrubCanvas({
   opacity,
   scrollProgress,
   enabled = true,
+  isMobile = false,
 }: ScrollScrubCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useCanvasScrub(canvasRef, { images, targetFrameIndex, enabled });
+  useCanvasScrub(canvasRef, {
+    images,
+    targetFrameIndex,
+    enabled,
+    maxDpr: isMobile ? CANVAS_MAX_DPR_MOBILE : CANVAS_MAX_DPR,
+  });
 
   const rotateX = useTransform(
     scrollProgress,
     [0, 0.5, 1],
-    [0, CANVAS_ROTATE_MAX * 0.4, CANVAS_ROTATE_MAX],
+    isMobile
+      ? [0, 0, 0]
+      : [0, CANVAS_ROTATE_MAX * 0.4, CANVAS_ROTATE_MAX],
   );
   const scale = useTransform(
     scrollProgress,
     [0, 1],
-    [1, 1 + CANVAS_SCALE_DEPTH],
+    isMobile ? [1, 1] : [1, 1 + CANVAS_SCALE_DEPTH],
   );
   const canvasTransform = useTransform(
     [rotateX, scale],
-    ([rx, s]) => `perspective(1200px) rotateX(${rx}deg) scale(${s})`,
+    ([rx, s]) =>
+      isMobile
+        ? undefined
+        : `perspective(1200px) rotateX(${rx}deg) scale(${s})`,
   );
 
   return (
@@ -51,7 +65,7 @@ export function ScrollScrubCanvas({
     >
       <motion.div
         className="absolute inset-0 origin-center"
-        style={{ transform: canvasTransform }}
+        style={isMobile ? undefined : { transform: canvasTransform }}
       >
         <canvas
           ref={canvasRef}

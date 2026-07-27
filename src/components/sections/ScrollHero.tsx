@@ -334,6 +334,7 @@ export function ScrollHero() {
               opacity={videoFade}
               scrollProgress={driveProgress}
               enabled={framesReady}
+              isMobile={isMobile}
             />
 
             <HeroSideCopy progress={driveProgress} />

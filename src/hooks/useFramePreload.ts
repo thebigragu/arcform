@@ -34,16 +34,19 @@ const EMPTY: PreloadState = {
   error: null,
 };
 
-function decodeSize(manifest: HeroSequenceManifest) {
+function decodeSize(
+  manifest: HeroSequenceManifest,
+  maxWidth: number | null,
+) {
   const srcW = Math.max(1, manifest.width);
   const srcH = Math.max(1, manifest.height);
   // null = native extract size (full 1440p on desktop).
-  if (DECODE_MAX_WIDTH == null || srcW <= DECODE_MAX_WIDTH) {
+  if (maxWidth == null || srcW <= maxWidth) {
     return { w: srcW, h: srcH, resize: false as const };
   }
-  const scale = DECODE_MAX_WIDTH / srcW;
+  const scale = maxWidth / srcW;
   return {
-    w: DECODE_MAX_WIDTH,
+    w: maxWidth,
     h: Math.max(1, Math.round(srcH * scale)),
     resize: true as const,
   };
@@ -67,11 +70,20 @@ export function useFramePreload(
     enabled?: boolean;
     /** Override decode-all. `false` forces sliding-window (mobile). */
     decodeAll?: boolean;
+    /** Override DECODE_MAX_WIDTH (mobile bitmap downscale). */
+    maxDecodeWidth?: number | null;
+    /** Override PRELOAD_MAX_DECODED for windowed mode. */
+    maxDecoded?: number;
+    /** Override PRELOAD_AHEAD_BOOST for windowed mode. */
+    aheadBoost?: number;
   },
 ) {
   const maxConcurrent = options?.maxConcurrent ?? PRELOAD_MAX_CONCURRENT;
   const enabled = options?.enabled ?? true;
   const decodeAllOverride = options?.decodeAll;
+  const maxDecodeWidth = options?.maxDecodeWidth ?? DECODE_MAX_WIDTH;
+  const maxDecoded = options?.maxDecoded ?? PRELOAD_MAX_DECODED;
+  const aheadBoost = options?.aheadBoost ?? PRELOAD_AHEAD_BOOST;
   const [state, setState] = useState<PreloadState>(EMPTY);
   const reducedRef = useRef(false);
 
@@ -94,7 +106,7 @@ export function useFramePreload(
     const images: (ScrubFrame | undefined)[] = new Array(count);
     const inFlight = new Map<number, Inflight>();
     const queued = new Set<number>();
-    const targetSize = decodeSize(manifest);
+    const targetSize = decodeSize(manifest, maxDecodeWidth);
     let aborted = false;
     let readyPublished = false;
     let lastCenter = -1;
@@ -154,7 +166,7 @@ export function useFramePreload(
         return { lo: 0, hi: count - 1 };
       }
       const back = PRELOAD_WINDOW;
-      const ahead = PRELOAD_WINDOW + PRELOAD_AHEAD_BOOST + aheadExtra();
+      const ahead = PRELOAD_WINDOW + aheadBoost + aheadExtra();
       if (dir >= 0) {
         return {
           lo: Math.max(0, center - back),
@@ -170,11 +182,11 @@ export function useFramePreload(
     const usefulDist = (center: number) =>
       decodeAll
         ? count
-        : PRELOAD_WINDOW + PRELOAD_AHEAD_BOOST + aheadExtra() + 48;
+        : PRELOAD_WINDOW + aheadBoost + aheadExtra() + 48;
 
     const enforceBudget = (center: number, dir: number) => {
       if (decodeAll) return;
-      if (decodedCount <= PRELOAD_MAX_DECODED) return;
+      if (decodedCount <= maxDecoded) return;
       const { lo, hi } = loadBounds(center, dir);
       const victims: { i: number; dist: number }[] = [];
       for (let i = 0; i < count; i++) {
@@ -186,7 +198,7 @@ export function useFramePreload(
       }
       victims.sort((a, b) => b.dist - a.dist);
       for (const v of victims) {
-        if (decodedCount <= PRELOAD_MAX_DECODED) break;
+        if (decodedCount <= maxDecoded) break;
         release(v.i);
       }
     };
@@ -505,7 +517,16 @@ export function useFramePreload(
       for (let i = 0; i < count; i++) release(i);
       setState(EMPTY);
     };
-  }, [manifest, maxConcurrent, enabled, playheadRef, decodeAllOverride]);
+  }, [
+    manifest,
+    maxConcurrent,
+    enabled,
+    playheadRef,
+    decodeAllOverride,
+    maxDecodeWidth,
+    maxDecoded,
+    aheadBoost,
+  ]);
 
   return state;
 }

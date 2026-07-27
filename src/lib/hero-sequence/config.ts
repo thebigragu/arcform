@@ -28,28 +28,43 @@ export const PRELOAD_WINDOW = 40;
 /** Extra frames loaded in the current scroll direction (windowed mode). */
 export const PRELOAD_AHEAD_BOOST = 56;
 
+/** Tighter ahead band on mobile windowed path. */
+export const PRELOAD_AHEAD_BOOST_MOBILE = 28;
+
 /**
  * Hard cap on decoded frames kept in RAM when windowed (not decode-all).
  */
 export const PRELOAD_MAX_DECODED = 140;
 
+/** Stricter RAM budget for phones (~80 decoded ≈ manageable at 900px wide). */
+export const PRELOAD_MAX_DECODED_MOBILE = 80;
+
 /**
  * Runtime decode long-edge cap. `null` = native extract size (true 1440p /
- * max quality — never downscale).
+ * max quality — never downscale). Desktop uses null; mobile overrides.
  */
 export const DECODE_MAX_WIDTH: number | null = null;
+
+/**
+ * Mobile runtime decode width — keeps disk at 1440p but bitmaps ~900×1619.
+ * ~6MB/frame decoded vs ~15MB; with an 80-frame budget ≈ 0.5GB vs multi‑GB.
+ */
+export const DECODE_MAX_WIDTH_MOBILE = 900;
 
 /** Parallel in-flight frame fetches (desktop / decode-all). */
 export const PRELOAD_MAX_CONCURRENT = 16;
 
 /** Parallel in-flight fetches on mobile windowed path — gentler on phones. */
-export const PRELOAD_MAX_CONCURRENT_MOBILE = 8;
+export const PRELOAD_MAX_CONCURRENT_MOBILE = 6;
 
 /** Max extra ahead frames added from scroll velocity (windowed mode only). */
 export const PRELOAD_VELOCITY_AHEAD_MAX = 72;
 
-/** Cap retina backing store */
+/** Cap retina backing store (desktop). */
 export const CANVAS_MAX_DPR = 2;
+
+/** Cap retina backing store on phones — big fill-rate win. */
+export const CANVAS_MAX_DPR_MOBILE = 1.25;
 
 /** Subtle scroll-linked canvas tilt (degrees) */
 export const CANVAS_ROTATE_MAX = 1.5;

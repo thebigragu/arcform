@@ -14,6 +14,10 @@ const GOLD = "#c4a574";
 const LETTER_SHADOW =
   "0 0 2px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.85), 0 5px 18px rgba(0,0,0,0.65), 0 10px 32px rgba(0,0,0,0.45), 0 16px 48px rgba(0,0,0,0.28)";
 
+/** Lighter shadow stack on phones — heavy multi-layer shadows cost compositing. */
+const LETTER_SHADOW_MOBILE =
+  "0 1px 2px rgba(0,0,0,0.95), 0 3px 10px rgba(0,0,0,0.55)";
+
 function smoothstep(e: number) {
   const t = Math.min(1, Math.max(0, e));
   return t * t * (3 - 2 * t);
@@ -151,12 +155,14 @@ function WordLine({
   tokens,
   preventOrphans = false,
   glueLast,
+  letterShadow = LETTER_SHADOW,
 }: {
   tokens: WordToken[];
   /** Keep the last 2–3 words on one line so a lone word never sits alone. */
   preventOrphans?: boolean;
   /** Explicit last-N glue (e.g. keep "production, end to end." together). */
   glueLast?: number;
+  letterShadow?: string;
 }) {
   const glueCount = useMemo(() => {
     if (glueLast != null && glueLast > 0) {
@@ -185,7 +191,7 @@ function WordLine({
           {i > 0 ? " " : null}
           <span
             className="inline-block whitespace-nowrap"
-            style={{ color: token.color, textShadow: LETTER_SHADOW }}
+            style={{ color: token.color, textShadow: letterShadow }}
           >
             {token.text}
           </span>
@@ -198,7 +204,7 @@ function WordLine({
             {tail.map((token, i) => (
               <span key={token.key}>
                 {i > 0 ? " " : null}
-                <span style={{ color: token.color, textShadow: LETTER_SHADOW }}>
+                <span style={{ color: token.color, textShadow: letterShadow }}>
                   {token.text}
                 </span>
               </span>
@@ -224,6 +230,7 @@ function SideBlurbBlock({
 
   const titleMotion = useBlurbMotion(progress, blurb, 0);
   const bodyMotion = useBlurbMotion(progress, blurb, 0.18);
+  const letterShadow = isMobile ? LETTER_SHADOW_MOBILE : LETTER_SHADOW;
 
   const isLow = blurb.align === "low";
 
@@ -292,7 +299,7 @@ function SideBlurbBlock({
             ...(blurb.titleNowrap ? { whiteSpace: "nowrap" as const } : null),
           }}
         >
-          <WordLine tokens={titleTokens} />
+          <WordLine tokens={titleTokens} letterShadow={letterShadow} />
         </motion.h2>
         <motion.p
           className="font-marcellus mt-[0.9em] font-normal text-white [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
@@ -310,6 +317,7 @@ function SideBlurbBlock({
             tokens={bodyTokens}
             preventOrphans
             glueLast={blurb.bodyGlueLast}
+            letterShadow={letterShadow}
           />
         </motion.p>
       </div>

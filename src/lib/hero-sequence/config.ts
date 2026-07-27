@@ -1,7 +1,7 @@
 /** Tunable hero scroll-scrub settings */
 
 /** Shorter than desktop — better thumb travel; still long enough for smooth scrub. */
-export const SCROLL_HEIGHT_MOBILE = "900vh";
+export const SCROLL_HEIGHT_MOBILE = "1200vh";
 /** ~2.7× original 740vh — slower frame velocity for fluid 1440p scrub. */
 export const SCROLL_HEIGHT_DESKTOP = "2000vh";
 

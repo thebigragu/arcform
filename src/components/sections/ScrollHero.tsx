@@ -318,7 +318,7 @@ export function ScrollHero() {
 
       <section
         ref={scrubRef}
-        className="relative h-[900vh] bg-transparent md:h-[2000vh]"
+        className="relative h-[1200vh] bg-transparent md:h-[2000vh]"
       >
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <motion.div

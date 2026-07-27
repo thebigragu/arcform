@@ -42,3 +42,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Hero Kling sources — extract locally only; ship WebP frames, not MP4s
+/public/videos/hero-kling.mp4
+/public/videos/hero-kling-mobile.mp4

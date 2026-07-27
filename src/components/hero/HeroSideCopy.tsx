@@ -1,5 +1,6 @@
 "use client";
 
+import { useIsMobile } from "@/hooks/useIsMobile";
 import {
   motion,
   useTransform,
@@ -27,6 +28,7 @@ type SideBlurb = {
   bodyEmph: string[];
   appear: [number, number];
   vanish: [number, number];
+  /** Desktop: mid = left-rail center; low = lower left. Mobile: mid = top-right; low = bottom-left. */
   align: "mid" | "low";
   /** Keep the full title on a single line. */
   titleNowrap?: boolean;
@@ -38,7 +40,7 @@ const BLURBS: SideBlurb[] = [
   {
     id: "design",
     title: [{ t: "Bespoke", emph: true }, { t: "web design" }],
-    body: "Interfaces that feel inevitable — present and intentional.",
+    body: "Interfaces that feel inevitable. Present and intentional.",
     bodyEmph: ["inevitable", "intentional"],
     appear: [0.01, 0.1],
     // Exit earlier by the same ~0.05 we pulled the entrance forward
@@ -49,7 +51,7 @@ const BLURBS: SideBlurb[] = [
   {
     id: "apps",
     title: [{ t: "Apps," }, { t: "engineered", emph: true }],
-    body: "Products built to ship — from prototype to production.",
+    body: "Products built to ship. From prototype to production.",
     bodyEmph: ["ship", "production"],
     appear: [0.46, 0.54],
     vanish: [0.78, 0.86],
@@ -211,9 +213,11 @@ function WordLine({
 function SideBlurbBlock({
   blurb,
   progress,
+  isMobile,
 }: {
   blurb: SideBlurb;
   progress: MotionValue<number>;
+  isMobile: boolean;
 }) {
   const titleTokens = useMemo(() => buildTitleTokens(blurb), [blurb]);
   const bodyTokens = useMemo(() => buildBodyTokens(blurb), [blurb]);
@@ -223,32 +227,68 @@ function SideBlurbBlock({
 
   const isLow = blurb.align === "low";
 
+  const slotStyle = isMobile
+    ? isLow
+      ? {
+          // Bottom-left — explicit insets (abs kids ignore parent padding)
+          top: "auto",
+          bottom: "clamp(4.5rem, 11vmin + 1.5rem, 7rem)",
+          left: "clamp(2.5rem, 8vmin + 1.25rem, 3.75rem)",
+          right: "auto",
+          width: "min(100%, clamp(15.5rem, 72vmin, 21rem))",
+          justifyContent: "flex-end" as const,
+          alignItems: "flex-start" as const,
+        }
+      : {
+          // Top-right — explicit insets (abs kids ignore parent padding)
+          // Match logo top-8; slight lift so cap-height meets logo top
+          top: "1.82rem",
+          bottom: "auto",
+          left: "auto",
+          right: "clamp(0.2rem, 0.8vmin + 0.1rem, 0.5rem)",
+          width: "min(100%, clamp(15.5rem, 72vmin, 21rem))",
+          justifyContent: "flex-start" as const,
+          alignItems: "flex-start" as const,
+        }
+    : isLow
+      ? {
+          top: "clamp(58%, 63vh, 70%)",
+          bottom: "clamp(1.75rem, 5.5vh, 4rem)",
+          justifyContent: "flex-end" as const,
+        }
+      : {
+          top: 0,
+          bottom: 0,
+          justifyContent: "center" as const,
+        };
+
   return (
     <div
-      className="absolute inset-x-0 flex flex-col"
-      style={
-        isLow
-          ? {
-              // Keep clear of left-side laptop UI across laptop → ultrawide
-              top: "clamp(58%, 63vh, 70%)",
-              bottom: "clamp(1.75rem, 5.5vh, 4rem)",
-              justifyContent: "flex-end",
-            }
-          : {
-              top: 0,
-              bottom: 0,
-              justifyContent: "center",
-            }
-      }
+      className={`absolute flex flex-col ${isMobile ? "" : "inset-x-0"}`}
+      style={slotStyle}
     >
-      <div className="max-w-full">
+      <div
+        className="max-w-full"
+        style={
+          isMobile
+            ? {
+                textAlign: "left",
+                width: "100%",
+              }
+            : undefined
+        }
+      >
         <motion.h2
           className="font-serif font-bold tracking-normal text-white [overflow-wrap:normal] [word-break:normal] [hyphens:none]"
           style={{
             opacity: titleMotion.opacity,
             y: titleMotion.y,
-            fontSize: "clamp(1.85rem, 0.55rem + 4.8vmin, 5rem)",
+            fontSize: isMobile
+              ? "clamp(1.45rem, 0.55rem + 5.4vmin, 2.45rem)"
+              : "clamp(1.85rem, 0.55rem + 4.8vmin, 5rem)",
             lineHeight: 1.15,
+            // Optical: pull cap-height up to match logo top (serif leading)
+            ...(isMobile ? { marginTop: "-0.18em" } : null),
             ...(blurb.titleNowrap ? { whiteSpace: "nowrap" as const } : null),
           }}
         >
@@ -259,7 +299,9 @@ function SideBlurbBlock({
           style={{
             opacity: bodyMotion.opacity,
             y: bodyMotion.y,
-            fontSize: "clamp(1.2rem, 0.45rem + 2.85vmin, 2.15rem)",
+            fontSize: isMobile
+              ? "clamp(0.95rem, 0.4rem + 3.1vmin, 1.35rem)"
+              : "clamp(1.2rem, 0.45rem + 2.85vmin, 2.15rem)",
             lineHeight: 1.45,
             letterSpacing: "0.03em",
           }}
@@ -280,23 +322,36 @@ type HeroSideCopyProps = {
 };
 
 /**
- * Left-rail hero copy — fluid vmin scaling for ultrawide + clean fade/rise.
+ * Desktop: left-rail copy with fluid vmin scaling.
+ * Mobile: first blurb top-right (left-aligned), second bottom-left — logo-like fluid insets.
  */
 export function HeroSideCopy({ progress }: HeroSideCopyProps) {
+  const isMobile = useIsMobile();
+
   return (
     <div
       className="pointer-events-none absolute z-30"
-      style={{
-        top: "clamp(5rem, 12vmin, 9rem)",
-        bottom: "clamp(2.25rem, 7vmin, 5.5rem)",
-        // Nudge right off the bezel while staying in the left gutter
-        left: "clamp(2.25rem, 5.5vmin + 1.6vw, 8.5rem)",
-        width: "clamp(17rem, 40vmin, 42rem)",
-      }}
+      style={
+        isMobile
+          ? {
+              inset: 0,
+            }
+          : {
+              top: "clamp(5rem, 12vmin, 9rem)",
+              bottom: "clamp(2.25rem, 7vmin, 5.5rem)",
+              left: "clamp(2.25rem, 5.5vmin + 1.6vw, 8.5rem)",
+              width: "clamp(17rem, 40vmin, 42rem)",
+            }
+      }
       aria-live="polite"
     >
       {BLURBS.map((blurb) => (
-        <SideBlurbBlock key={blurb.id} blurb={blurb} progress={progress} />
+        <SideBlurbBlock
+          key={blurb.id}
+          blurb={blurb}
+          progress={progress}
+          isMobile={isMobile}
+        />
       ))}
     </div>
   );

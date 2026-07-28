@@ -3,13 +3,15 @@
  */
 export class PresentClock {
   private targetFps: number;
+  private maxFps: number;
   private lastPresent = 0;
   private frames = 0;
   private windowStart = performance.now();
   private measuredFps = 60;
 
-  constructor(initialFps: number) {
-    this.targetFps = initialFps;
+  constructor(initialFps: number, maxFps = 60) {
+    this.maxFps = Math.max(15, Math.min(60, Math.round(maxFps)));
+    this.targetFps = Math.max(15, Math.min(this.maxFps, Math.round(initialFps)));
   }
 
   getTargetFps() {
@@ -21,7 +23,12 @@ export class PresentClock {
   }
 
   setTargetFps(fps: number) {
-    this.targetFps = Math.max(15, Math.min(60, Math.round(fps)));
+    this.targetFps = Math.max(15, Math.min(this.maxFps, Math.round(fps)));
+  }
+
+  setMaxFps(maxFps: number) {
+    this.maxFps = Math.max(15, Math.min(60, Math.round(maxFps)));
+    if (this.targetFps > this.maxFps) this.targetFps = this.maxFps;
   }
 
   /** Returns true if this rAF should draw. */
@@ -38,17 +45,19 @@ export class PresentClock {
     return true;
   }
 
-  /** Step down/up from health. */
+  /** Step down/up from health, never above maxFps. */
   adapt(measuredFps: number, decodeLatencyMs: number) {
     if (measuredFps < this.targetFps * 0.7 || decodeLatencyMs > 28) {
-      if (this.targetFps > 30) this.targetFps = 30;
-      else if (this.targetFps > 20) this.targetFps = 20;
+      if (this.targetFps > 30) this.targetFps = Math.min(30, this.maxFps);
+      else if (this.targetFps > 20) this.targetFps = Math.min(20, this.maxFps);
     } else if (
       measuredFps > this.targetFps * 0.95 &&
       decodeLatencyMs < 10 &&
-      this.targetFps < 60
+      this.targetFps < this.maxFps
     ) {
-      this.targetFps = this.targetFps < 30 ? 30 : 60;
+      if (this.targetFps < 30 && this.maxFps >= 30) this.targetFps = 30;
+      else if (this.maxFps >= 60) this.targetFps = 60;
+      else this.targetFps = this.maxFps;
     }
   }
 }

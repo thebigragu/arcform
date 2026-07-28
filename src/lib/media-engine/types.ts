@@ -124,6 +124,15 @@ export type MediaEngineOptions = {
   /** Force a single source (skips ladder). */
   src?: string;
   poster?: string;
+  /**
+   * Prefer these ladder tier ids (in order) over capability recommendations.
+   * Example: mobile site lock `["m900"]`.
+   */
+  preferredTiers?: QualityTierId[];
+  /** Override initial present FPS (timeline assets stay 60fps). */
+  presentFps?: number;
+  /** Cap adaptive present FPS (e.g. 30 so adapt never ramps to 60). */
+  maxPresentFps?: number;
   renderer?: RendererPreference;
   reducedMotion?: boolean;
   analytics?: boolean;

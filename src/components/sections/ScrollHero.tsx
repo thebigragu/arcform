@@ -431,6 +431,9 @@ function ScrollHeroMobile() {
           <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
             <HeroMedia
               deviceClass="mobile"
+              preferredTiers={["m900"]}
+              presentFps={30}
+              maxPresentFps={30}
               scrubProgress={frameProgress}
               onReady={signalEngineReady}
               onProgress={reportProgress}
@@ -545,6 +548,9 @@ function ScrollHeroDesktop() {
           >
             <HeroMedia
               deviceClass="desktop"
+              preferredTiers={["d2560"]}
+              presentFps={45}
+              maxPresentFps={45}
               scrubProgress={frameProgress}
               onReady={signalEngineReady}
               onProgress={reportProgress}

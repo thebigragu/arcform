@@ -1,9 +1,0 @@
-{
-  "id": "desktop",
-  "source": "public/videos/hero-kling.mp4",
-  "frameCount": 360,
-  "width": 2590,
-  "height": 1440,
-  "fps": 60,
-  "pattern": "/hero-sequences/desktop/frame-%05d.webp"
-}

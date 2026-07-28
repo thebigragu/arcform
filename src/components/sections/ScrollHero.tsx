@@ -4,16 +4,13 @@ import { Button } from "@/components/ui/Button";
 import { ContactModal } from "@/components/ui/ContactModal";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { HeroSideCopy } from "@/components/hero/HeroSideCopy";
-import { ScrollScrubCanvas } from "@/components/hero/ScrollScrubCanvas";
-import { ScrollScrubVideo } from "@/components/hero/ScrollScrubVideo";
+import { HeroMedia } from "@/components/media/HeroMedia";
 import { useHeroPreload } from "@/context/HeroPreloadContext";
-import { useScrollFrameIndex } from "@/hooks/useScrollFrameIndex";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
-  HERO_MOBILE_SCRUB_POSTER,
   SCRUB_HANDOFF_START,
   VIDEO_HANDOFF,
-} from "@/lib/hero-sequence/config";
+} from "@/lib/hero-scroll";
 import {
   motion,
   useMotionTemplate,
@@ -412,7 +409,7 @@ function ScrollHeroMobile() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { mobileVideoSrc, signalMobilePainted } = useHeroPreload();
+  const { signalEngineReady, reportProgress, reportError } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -421,7 +418,6 @@ function ScrollHeroMobile() {
 
   const uiProgress = scrollYProgress;
   const frameProgress = useFrameProgress(scrollYProgress);
-  const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
   const { contactParallax, contactOpacity } = useContactMotion(uiProgress, true);
 
   return (
@@ -433,24 +429,13 @@ function ScrollHeroMobile() {
       >
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
-            {/* Permanent still so the hero never shows bare black while video mounts. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={HERO_MOBILE_SCRUB_POSTER}
-              alt=""
-              className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
-              fetchPriority="high"
-              decoding="sync"
+            <HeroMedia
+              deviceClass="mobile"
+              scrubProgress={frameProgress}
+              onReady={signalEngineReady}
+              onProgress={reportProgress}
+              onFatal={(e) => reportError(e.message)}
             />
-            {mobileVideoSrc ? (
-              <ScrollScrubVideo
-                src={mobileVideoSrc}
-                scrubProgress={frameProgress}
-                opacity={videoFade}
-                enabled
-                onFirstPaint={signalMobilePainted}
-              />
-            ) : null}
 
             <MobileHeroBottomFade scrollProgress={uiProgress} />
             <HeroSideCopy progress={uiProgress} />
@@ -476,12 +461,7 @@ function ScrollHeroDesktop() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const {
-    images,
-    ready: framesReady,
-    manifest,
-    playheadRef,
-  } = useHeroPreload();
+  const { signalEngineReady, reportProgress, reportError } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -497,12 +477,6 @@ function ScrollHeroDesktop() {
   });
   const uiProgress = sprungProgress;
   const frameProgress = useFrameProgress(scrollYProgress);
-
-  useScrollFrameIndex(
-    frameProgress,
-    manifest?.frameCount ?? 1,
-    playheadRef,
-  );
 
   const stickyLift = useTransform(scrollYProgress, (p) => {
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
@@ -540,7 +514,6 @@ function ScrollHeroDesktop() {
       "linear-gradient(to bottom, #000 0%, #000 28%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.16) 66%, rgba(0,0,0,0.03) 84%, transparent 100%)",
     ],
   );
-  const videoFade = useTransform(uiProgress, [0, 1], [1, 1]);
   const { contactParallax, contactOpacity } = useContactMotion(uiProgress, false);
 
   useMotionValueEvent(heroMask, "change", (mask) => {
@@ -570,13 +543,12 @@ function ScrollHeroDesktop() {
             className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
             style={{ y: stickyLift }}
           >
-            <ScrollScrubCanvas
-              images={images}
-              targetFrameIndex={playheadRef}
-              opacity={videoFade}
-              scrollProgress={uiProgress}
-              enabled={framesReady}
-              isMobile={false}
+            <HeroMedia
+              deviceClass="desktop"
+              scrubProgress={frameProgress}
+              onReady={signalEngineReady}
+              onProgress={reportProgress}
+              onFatal={(e) => reportError(e.message)}
             />
             <HeroSideCopy progress={uiProgress} />
             <DesktopScrollCue scrollProgress={uiProgress} />
@@ -604,3 +576,4 @@ export function ScrollHero() {
 
   return <ScrollHeroMobile />;
 }
+

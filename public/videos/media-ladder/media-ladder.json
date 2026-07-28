@@ -1,0 +1,74 @@
+{
+  "version": 2,
+  "fpsSource": 60,
+  "gop": 1,
+  "crf": 21,
+  "codec": "avc1",
+  "tiers": [
+    {
+      "id": "d2560",
+      "device": "desktop",
+      "maxWidth": 2560,
+      "src": "/videos/media-ladder/d2560.mp4",
+      "poster": "/videos/media-ladder/d2560-poster.webp",
+      "width": 2560,
+      "height": 1424,
+      "duration": 6,
+      "fps": 60,
+      "frameCount": 360,
+      "bytes": 32774238
+    },
+    {
+      "id": "d1920",
+      "device": "desktop",
+      "maxWidth": 1920,
+      "src": "/videos/media-ladder/d1920.mp4",
+      "poster": "/videos/media-ladder/d1920-poster.webp",
+      "width": 1920,
+      "height": 1068,
+      "duration": 6,
+      "fps": 60,
+      "frameCount": 360,
+      "bytes": 21792208
+    },
+    {
+      "id": "m1440",
+      "device": "mobile",
+      "maxWidth": 1440,
+      "src": "/videos/media-ladder/m1440.mp4",
+      "poster": "/videos/media-ladder/m1440-poster.webp",
+      "width": 1440,
+      "height": 2590,
+      "duration": 6,
+      "fps": 60,
+      "frameCount": 360,
+      "bytes": 29551410
+    },
+    {
+      "id": "m1080",
+      "device": "mobile",
+      "maxWidth": 1080,
+      "src": "/videos/media-ladder/m1080.mp4",
+      "poster": "/videos/media-ladder/m1080-poster.webp",
+      "width": 1080,
+      "height": 1942,
+      "duration": 6,
+      "fps": 60,
+      "frameCount": 360,
+      "bytes": 19445490
+    },
+    {
+      "id": "m900",
+      "device": "mobile",
+      "maxWidth": 900,
+      "src": "/videos/media-ladder/m900.mp4",
+      "poster": "/videos/media-ladder/m900-poster.webp",
+      "width": 900,
+      "height": 1618,
+      "duration": 6,
+      "fps": 60,
+      "frameCount": 360,
+      "bytes": 14913515
+    }
+  ]
+}

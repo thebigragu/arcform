@@ -7,6 +7,7 @@ import {
   Syne,
 } from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
+import { HeroResourceHints } from "@/components/hero/HeroResourceHints";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { Providers } from "@/components/motion/Providers";
@@ -55,6 +56,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${cormorant.variable} ${marcellus.variable} h-full antialiased`}
     >
+      <head>
+        <HeroResourceHints />
+      </head>
       <body className="min-h-full flex flex-col bg-bg text-fg">
         <script
           type="application/ld+json"

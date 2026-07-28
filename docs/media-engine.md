@@ -1,61 +1,55 @@
-# Media Engine v2.1 — Operator Guide
+# Media Engine — Operator Guide (Standard 2.2)
 
-Reusable scroll-scrub media engine for luxury sites. Core lives in `src/lib/media-engine/` (no Next.js imports). React shell: `src/components/media/HeroMedia.tsx`.
+Reusable scroll-scrub media engine for luxury sites. Core: `src/lib/media-engine/`. React shell: `src/components/media/HeroMedia.tsx`.
+
+Agency handbook: Media Engine Skill V2.2 (stable).
 
 ## Assets
 
-- **Masters:** `public/videos/hero-kling.mp4`, `hero-kling-mobile.mp4` (4K / 60fps).
+- **Masters (archival, never delivered):** `public/videos/hero-master-desktop.mp4`, `hero-master-mobile.mp4` — near-4K, **30fps**.
 - **Ladder:** `npm run media:ladder` → `public/videos/media-ladder/` + `media-ladder.json`.
-- All tiers: **60fps**, **g=1**, H.264. Present FPS is adapted in-engine (60→30→20).
+- **Default tiers:** `d1440`, `d1080` (desktop), `m900` (mobile) — **30fps**, **g=1**, H.264.
+- Desktop presentation targets smooth **60Hz** via engine PresentClock; mobile stays **30fps**.
 
 ## Usage
 
 ```tsx
 <HeroMedia
-  deviceClass="desktop" // or "mobile"
-  scrubProgress={frameProgress} // Framer MotionValue 0..1
+  deviceClass="desktop"
+  scrubProgress={frameProgress}
   renderer="auto"
-  onReady={() => signalEngineReady()}
+  onPosterLoad={signalPosterReady}
+  onReady={signalEngineReady}
   onProgress={reportProgress}
 />
 ```
+
+## Loading (V2.2 poster-first)
+
+1. Poster preloads via `<link rel="preload">` + `HeroPosterPreload`.
+2. Site loader dismisses on **poster + variant** — not full MP4 fetch.
+3. Media Engine initializes in background; poster swaps on first canvas present.
 
 ## Env flags
 
 | Flag | Effect |
 |------|--------|
-| `NEXT_PUBLIC_HERO_MEDIA_DEBUG=1` | Debug overlay (worst/variance/queue/adapt events) |
-| `NEXT_PUBLIC_MEDIA_ENGINE_ANALYTICS=1` | Emit `onStats` / monitor |
-| `NEXT_PUBLIC_MEDIA_ENGINE_PROGRESSIVE=1` | **Future prototype:** UrlSource demux (skip full-file buffer). Default off. |
+| `NEXT_PUBLIC_HERO_MEDIA_DEBUG=1` | Debug overlay |
+| `NEXT_PUBLIC_MEDIA_ENGINE_ANALYTICS=1` | Emit `onStats` |
+| `NEXT_PUBLIC_MEDIA_ENGINE_PROGRESSIVE=1` | Future: UrlSource demux (off by default) |
 
-## Runtime adaptation (honest)
+## Runtime adaptation
 
-After boot the engine may:
-
-1. Step present FPS (60→30→20) and buffer budget from health.
-2. Apply **buffer pressure relief** (shrink decoded-frame budget) — does **not** reload a smaller ladder tier.
+1. Present FPS steps (60→30→20) per [Agency Optimization Ladder](https://github.com).
+2. Buffer-pressure relief — does not reload ladder tier.
 3. Force `html-video` under sustained failure.
-
-WebCodecs configures `hardwareAcceleration: "prefer-hardware"` when `isConfigSupported` allows, with soft fallback.
-
-## Benchmarks
-
-See [media-engine-benchmark.md](./media-engine-benchmark.md) and [MEDIA_ENGINE_V2_1_REVIEW.md](./MEDIA_ENGINE_V2_1_REVIEW.md).
-
-## Architecture
-
-See [MEDIA_ENGINE_REVIEW.md](./MEDIA_ENGINE_REVIEW.md).
-
-Plugins: `webcodecs` | `html-video` | `poster` via `MediaRenderer`.  
-Demux: Mediabunny behind `DemuxerPort` (BlobSource default; UrlSource when progressive).  
-Scroll: `ScrollSynchronizer.fromMotionValue`; GSAP stub in `GsapScrollAdapter.ts`.
 
 ## Torture checklist
 
-1. Hard refresh desktop Chrome — WC or video, no black after loader.
-2. iOS Safari — first paint gated; scrub reverse/fast.
-3. Throttle CPU 4× — present FPS drops, no unbounded cache.
-4. Force `renderer="html-video"` — parity look.
+1. Hard refresh — poster immediate; video swap after engine ready.
+2. iOS Safari — poster-first; no `opacity-0` loader traps.
+3. CPU 4× — present FPS drops, bounded cache.
+4. Force `renderer="html-video"` — visual parity.
 5. `prefers-reduced-motion` — poster only.
-6. Scrub 2 minutes — memory stable (Performance panel).
-7. Fast scrub — decode queue should not balloon (generation cancel).
+6. Scrub 2 minutes — memory stable.
+7. Fast scrub — queue does not balloon.

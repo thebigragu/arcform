@@ -43,6 +43,8 @@ next-env.d.ts
 .vercel
 .env*
 
-# Hero Kling sources — extract locally only; ship WebP frames, not MP4s
+# Hero archival masters — never delivered; ladder outputs are committed
+/public/videos/hero-master-desktop.mp4
+/public/videos/hero-master-mobile.mp4
 /public/videos/hero-kling.mp4
 /public/videos/hero-kling-mobile.mp4

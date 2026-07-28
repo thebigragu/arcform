@@ -77,17 +77,13 @@ export function scoreCapabilities(
 
   const recommendedTier: QualityTierId[] =
     deviceClass === "mobile"
-      ? score >= 70
-        ? ["m1440", "m1080", "m900"]
-        : score >= 50
-          ? ["m1080", "m900"]
-          : ["m900"]
-      : score >= 75
-        ? ["d2560", "d1920"]
-        : ["d1920"];
+      ? ["m900"]
+      : score >= 60
+        ? ["d1440", "d1080"]
+        : ["d1080"];
 
   const initialPresentFps =
-    deviceClass === "mobile" ? (score >= 65 ? 60 : 30) : score >= 50 ? 60 : 30;
+    deviceClass === "mobile" ? 30 : score >= 50 ? 60 : 30;
 
   const initialBufferBudgetFrames = Math.round(
     Math.min(

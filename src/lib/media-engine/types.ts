@@ -6,7 +6,12 @@ export type RendererPreference = "auto" | RendererId;
 
 export type DeviceClass = "desktop" | "mobile";
 
-export type QualityTierId = "d2560" | "d1920" | "m1440" | "m1080" | "m900";
+export type QualityTierId =
+  | "d1440"
+  | "d1080"
+  | "d1280"
+  | "m900"
+  | "m720";
 
 export type PredictHint = {
   velocity: number;

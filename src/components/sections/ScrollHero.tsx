@@ -409,7 +409,8 @@ function ScrollHeroMobile() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { signalEngineReady, reportProgress, reportError } = useHeroPreload();
+  const { signalEngineReady, signalPosterReady, reportProgress, reportError } =
+    useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -432,6 +433,7 @@ function ScrollHeroMobile() {
             <HeroMedia
               deviceClass="mobile"
               scrubProgress={frameProgress}
+              onPosterLoad={signalPosterReady}
               onReady={signalEngineReady}
               onProgress={reportProgress}
               onFatal={(e) => reportError(e.message)}
@@ -461,7 +463,8 @@ function ScrollHeroDesktop() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { signalEngineReady, reportProgress, reportError } = useHeroPreload();
+  const { signalEngineReady, signalPosterReady, reportProgress, reportError } =
+    useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -546,6 +549,7 @@ function ScrollHeroDesktop() {
             <HeroMedia
               deviceClass="desktop"
               scrubProgress={frameProgress}
+              onPosterLoad={signalPosterReady}
               onReady={signalEngineReady}
               onProgress={reportProgress}
               onFatal={(e) => reportError(e.message)}

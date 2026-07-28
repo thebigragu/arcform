@@ -1,5 +1,6 @@
 "use client";
 
+import { heroPosterPath } from "@/components/hero/HeroPosterPreload";
 import { HeroMediaDebugOverlay } from "@/components/media/HeroMediaDebugOverlay";
 import {
   MediaEngine,
@@ -18,6 +19,7 @@ type HeroMediaProps = {
   className?: string;
   debug?: boolean;
   onReady?: () => void;
+  onPosterLoad?: () => void;
   onProgress?: (p: number) => void;
   onFatal?: (e: Error) => void;
 };
@@ -33,6 +35,7 @@ export function HeroMedia({
   className,
   debug = process.env.NEXT_PUBLIC_HERO_MEDIA_DEBUG === "1",
   onReady,
+  onPosterLoad,
   onProgress,
   onFatal,
 }: HeroMediaProps) {
@@ -113,15 +116,12 @@ export function HeroMedia({
       {posterVisible ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={
-            deviceClass === "mobile"
-              ? "/videos/media-ladder/m900-poster.webp"
-              : "/videos/media-ladder/d1920-poster.webp"
-          }
+          src={heroPosterPath(deviceClass)}
           alt=""
           className="absolute inset-0 z-[2] h-full w-full object-cover"
           fetchPriority="high"
           decoding="sync"
+          onLoad={() => onPosterLoad?.()}
         />
       ) : null}
       <HeroMediaDebugOverlay stats={stats} visible={Boolean(debug)} />

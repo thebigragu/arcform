@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Encode Media Engine v2 quality ladder from 4K/60 masters.
- * All tiers: 60fps, g=1 (all-intra), H.264 high, +faststart, WebP posters.
+ * Encode Media Engine V2.2 quality ladder from archival 30fps masters.
+ * Default tiers: d1440, d1080 (desktop), m900 (mobile) — 30fps, g=1, H.264, WebP posters.
  *
- * Run: node scripts/encode-media-ladder.cjs
+ * Run: npm run media:ladder
  */
 const { spawnSync } = require("child_process");
 const fs = require("fs");
@@ -13,17 +13,34 @@ const ROOT = path.join(__dirname, "..");
 const VIDEOS = path.join(ROOT, "public", "videos");
 const OUT_DIR = path.join(VIDEOS, "media-ladder");
 
+/** V2.2 proportional ladder — no unnecessary tiers */
 const TIERS = [
-  { id: "d2560", master: "hero-kling.mp4", maxWidth: 2560, device: "desktop" },
-  { id: "d1920", master: "hero-kling.mp4", maxWidth: 1920, device: "desktop" },
-  { id: "m1440", master: "hero-kling-mobile.mp4", maxWidth: 1440, device: "mobile" },
-  { id: "m1080", master: "hero-kling-mobile.mp4", maxWidth: 1080, device: "mobile" },
-  { id: "m900", master: "hero-kling-mobile.mp4", maxWidth: 900, device: "mobile" },
+  {
+    id: "d1440",
+    master: "hero-master-desktop.mp4",
+    maxWidth: 1440,
+    device: "desktop",
+  },
+  {
+    id: "d1080",
+    master: "hero-master-desktop.mp4",
+    maxWidth: 1080,
+    device: "desktop",
+  },
+  {
+    id: "m900",
+    master: "hero-master-mobile.mp4",
+    maxWidth: 900,
+    device: "mobile",
+  },
 ];
+
+/** Legacy tiers removed by V2.2 — delete if present after encode */
+const LEGACY_TIER_IDS = ["d2560", "d1920", "m1440", "m1080"];
 
 const GOP = 1;
 const CRF = 21;
-const FPS = 60;
+const FPS = 30;
 const PRESET = "slower";
 
 function findBin(name) {
@@ -76,7 +93,8 @@ function probe(file) {
     height: Number(s.height) || 0,
     duration: Number(s.duration) || 0,
     fps,
-    nbFrames: Number(s.nb_frames) || Math.round((Number(s.duration) || 0) * fps),
+    nbFrames:
+      Number(s.nb_frames) || Math.round((Number(s.duration) || 0) * FPS),
   };
 }
 
@@ -156,11 +174,23 @@ function encodeTier(tier) {
   };
 }
 
+function removeLegacyTiers() {
+  for (const id of LEGACY_TIER_IDS) {
+    for (const ext of [".mp4", "-poster.webp"]) {
+      const p = path.join(OUT_DIR, `${id}${ext}`);
+      if (fs.existsSync(p)) {
+        fs.unlinkSync(p);
+        console.log(`Removed legacy ${path.basename(p)}`);
+      }
+    }
+  }
+}
+
 function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const tiers = TIERS.map(encodeTier);
   const manifest = {
-    version: 2,
+    version: 3,
     fpsSource: FPS,
     gop: GOP,
     crf: CRF,
@@ -169,6 +199,7 @@ function main() {
   };
   const manifestPath = path.join(OUT_DIR, "media-ladder.json");
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  removeLegacyTiers();
   console.log(`\nWrote ${manifestPath}`);
   for (const t of tiers) {
     console.log(

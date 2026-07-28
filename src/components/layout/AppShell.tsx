@@ -1,5 +1,6 @@
 "use client";
 
+import { HeroPosterPreload } from "@/components/hero/HeroPosterPreload";
 import { Loader } from "@/components/ui/Loader";
 import {
   HeroPreloadProvider,
@@ -44,6 +45,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
         className={loading ? "pointer-events-none" : undefined}
         aria-hidden={loading || undefined}
       >
+        <HeroPosterPreload />
         {children}
       </div>
     </>

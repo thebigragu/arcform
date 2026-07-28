@@ -425,7 +425,7 @@ export class MediaEngine {
     const poster =
       this.options.poster ||
       this.tier?.poster ||
-      "/videos/media-ladder/d1920-poster.webp";
+      "/videos/media-ladder/d1440-poster.webp";
     const r = new PosterRenderer(poster);
     await r.init({
       canvas: this.options.canvas,

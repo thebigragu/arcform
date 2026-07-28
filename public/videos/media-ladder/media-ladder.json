@@ -1,61 +1,35 @@
 {
-  "version": 2,
-  "fpsSource": 60,
+  "version": 3,
+  "fpsSource": 30,
   "gop": 1,
   "crf": 21,
   "codec": "avc1",
   "tiers": [
     {
-      "id": "d2560",
+      "id": "d1440",
       "device": "desktop",
-      "maxWidth": 2560,
-      "src": "/videos/media-ladder/d2560.mp4",
-      "poster": "/videos/media-ladder/d2560-poster.webp",
-      "width": 2560,
-      "height": 1424,
-      "duration": 6,
-      "fps": 60,
-      "frameCount": 360,
-      "bytes": 32774238
-    },
-    {
-      "id": "d1920",
-      "device": "desktop",
-      "maxWidth": 1920,
-      "src": "/videos/media-ladder/d1920.mp4",
-      "poster": "/videos/media-ladder/d1920-poster.webp",
-      "width": 1920,
-      "height": 1068,
-      "duration": 6,
-      "fps": 60,
-      "frameCount": 360,
-      "bytes": 21792208
-    },
-    {
-      "id": "m1440",
-      "device": "mobile",
       "maxWidth": 1440,
-      "src": "/videos/media-ladder/m1440.mp4",
-      "poster": "/videos/media-ladder/m1440-poster.webp",
+      "src": "/videos/media-ladder/d1440.mp4",
+      "poster": "/videos/media-ladder/d1440-poster.webp",
       "width": 1440,
-      "height": 2590,
+      "height": 800,
       "duration": 6,
-      "fps": 60,
-      "frameCount": 360,
-      "bytes": 29551410
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 8881206
     },
     {
-      "id": "m1080",
-      "device": "mobile",
+      "id": "d1080",
+      "device": "desktop",
       "maxWidth": 1080,
-      "src": "/videos/media-ladder/m1080.mp4",
-      "poster": "/videos/media-ladder/m1080-poster.webp",
+      "src": "/videos/media-ladder/d1080.mp4",
+      "poster": "/videos/media-ladder/d1080-poster.webp",
       "width": 1080,
-      "height": 1942,
+      "height": 600,
       "duration": 6,
-      "fps": 60,
-      "frameCount": 360,
-      "bytes": 19445490
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 5765375
     },
     {
       "id": "m900",
@@ -66,9 +40,9 @@
       "width": 900,
       "height": 1618,
       "duration": 6,
-      "fps": 60,
-      "frameCount": 360,
-      "bytes": 14913515
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 9434958
     }
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "mediaId": "hero",
+  "at": "2026-07-28T14:24:26.749Z",
+  "gates": [
+    {
+      "name": "manifest_exists",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "static_certification",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "v4_layout",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "typescript",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "eslint",
+      "pass": false,
+      "detail": "ESLint failed (exit 1)"
+    }
+  ],
+  "pass": false
+}

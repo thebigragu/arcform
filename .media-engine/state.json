@@ -1,0 +1,28 @@
+{
+  "engineVersion": "2.4.0",
+  "skillStandard": "2.5.0-rc.1",
+  "installedAt": "2026-07-28T17:54:37.527Z",
+  "updatedAt": "2026-07-28T17:58:00.000Z",
+  "frameworkAdapter": "nextjs-app-router",
+  "packageManager": "npm",
+  "installedFiles": [
+    { "path": "src/lib/media-engine/mediaDefaults.ts", "checksum": "aligned" },
+    { "path": "src/components/media/MediaView.tsx", "checksum": "aligned" },
+    { "path": "src/components/media/MediaDebugOverlay.tsx", "checksum": "aligned" }
+  ],
+  "adaptedFiles": [
+    "src/components/sections/ScrollHero.tsx",
+    "src/components/hero/HeroPosterPreload.tsx",
+    "src/components/hero/HeroResourceHints.tsx",
+    "src/lib/media-engine/heroDefaults.ts",
+    "src/app/dev/media-cert/page.tsx",
+    "src/context/HeroPreloadContext.tsx"
+  ],
+  "mediaIds": ["hero"],
+  "manifestVersions": { "hero": 4 },
+  "lastCertification": {
+    "static": "pass",
+    "build": "skipped",
+    "runtime": "deferred"
+  }
+}

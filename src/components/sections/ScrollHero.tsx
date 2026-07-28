@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/Button";
 import { ContactModal } from "@/components/ui/ContactModal";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { HeroSideCopy } from "@/components/hero/HeroSideCopy";
-import { HeroMedia } from "@/components/media/HeroMedia";
+import { MediaView } from "@/components/media/MediaView";
+import {
+  HERO_MEDIA_ID,
+  HERO_POSTER_FALLBACK,
+} from "@/lib/media-engine/heroDefaults";
 import { useHeroPreload } from "@/context/HeroPreloadContext";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
@@ -430,7 +434,9 @@ function ScrollHeroMobile() {
       >
         <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
-            <HeroMedia
+            <MediaView
+              mediaId={HERO_MEDIA_ID}
+              posterFallback={HERO_POSTER_FALLBACK}
               deviceClass="mobile"
               scrubProgress={frameProgress}
               onPosterLoad={signalPosterReady}
@@ -546,7 +552,9 @@ function ScrollHeroDesktop() {
             className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
             style={{ y: stickyLift }}
           >
-            <HeroMedia
+            <MediaView
+              mediaId={HERO_MEDIA_ID}
+              posterFallback={HERO_POSTER_FALLBACK}
               deviceClass="desktop"
               scrubProgress={frameProgress}
               onPosterLoad={signalPosterReady}

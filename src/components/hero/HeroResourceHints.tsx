@@ -1,25 +1,24 @@
-/** V2.2 poster-first: early fetch for hero posters (no MP4 on critical path). */
+import {
+  HERO_MANIFEST_URL,
+  HERO_POSTER_FALLBACK,
+} from "@/lib/media-engine/heroDefaults";
+
+/**
+ * Skill-aligned resource hints for hero media (v4 manifest + posters).
+ * Legacy ladder preload omitted — delivery is manifest-driven.
+ */
 export function HeroResourceHints() {
+  const { desktop, mobile } = HERO_POSTER_FALLBACK;
   return (
     <>
       <link
         rel="preload"
-        as="image"
-        href="/videos/media-ladder/d1440-poster.webp"
-        type="image/webp"
-      />
-      <link
-        rel="preload"
-        as="image"
-        href="/videos/media-ladder/m900-poster.webp"
-        type="image/webp"
-      />
-      <link
-        rel="preload"
-        href="/videos/media-ladder/media-ladder.json"
         as="fetch"
+        href={HERO_MANIFEST_URL}
         crossOrigin="anonymous"
       />
+      <link rel="preload" as="image" href={desktop} type="image/webp" />
+      <link rel="preload" as="image" href={mobile} type="image/webp" />
     </>
   );
 }

@@ -15,6 +15,8 @@ export type RendererContext = {
   presentFps: number;
   maxDpr: number;
   onDecodeError?: (error: Error) => void;
+  /** ADR-024: mount point for visible playback video. */
+  playbackMount?: HTMLElement | null;
 };
 
 /**
@@ -25,7 +27,7 @@ export interface MediaRenderer {
   readonly id: string;
   init(ctx: RendererContext): Promise<void>;
   setTargetFrame(index: number, hint: PredictHint): void;
-  present(canvas: HTMLCanvasElement | OffscreenCanvas): void;
+  present(canvas: HTMLCanvasElement | OffscreenCanvas): boolean;
   getStats(): RendererStats;
   resize?(cssWidth: number, cssHeight: number, dpr: number): void;
   dispose(): void;

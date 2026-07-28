@@ -11,6 +11,7 @@ export class HtmlVideoRenderer implements MediaRenderer {
   private video: HTMLVideoElement | null = null;
   private ctx: RendererContext | null = null;
   private target = 0;
+  private lastDrawnFrame = -1;
   private seeking = false;
   private pending = false;
   private lastSeekAt = 0;
@@ -74,11 +75,14 @@ export class HtmlVideoRenderer implements MediaRenderer {
     this.seekToTarget();
   }
 
-  present(canvas: HTMLCanvasElement | OffscreenCanvas): void {
+  present(canvas: HTMLCanvasElement | OffscreenCanvas): boolean {
     const video = this.video;
     const ctx2d = (canvas as HTMLCanvasElement).getContext?.("2d") ??
       (canvas as OffscreenCanvas).getContext("2d");
-    if (!video || !ctx2d || video.readyState < 2) return;
+    if (!video || !ctx2d || video.readyState < 2) return false;
+    if (this.target === this.lastDrawnFrame && !this.seeking && !this.pending) {
+      return false;
+    }
     const t0 = performance.now();
     drawCover(
       ctx2d,
@@ -89,6 +93,8 @@ export class HtmlVideoRenderer implements MediaRenderer {
       canvas.height,
     );
     this.stats.lastDrawMs = performance.now() - t0;
+    this.lastDrawnFrame = this.target;
+    return true;
   }
 
   getStats(): RendererStats {

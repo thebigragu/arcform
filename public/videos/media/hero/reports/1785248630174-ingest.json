@@ -1,0 +1,252 @@
+{
+  "mediaId": "hero",
+  "at": "2026-07-28T14:23:50.174Z",
+  "sources": {
+    "desktop": "c:\\Users\\jacob\\Desktop\\Website\\public\\videos\\hero-master-desktop.mp4",
+    "mobile": "c:\\Users\\jacob\\Desktop\\Website\\public\\videos\\hero-master-mobile.mp4"
+  },
+  "assets": [
+    {
+      "id": "scrub-d1440",
+      "intent": "scrub",
+      "src": "/videos/media/hero/scrub/d1440-bd5a58e16910.mp4",
+      "bytes": 8767771,
+      "width": 1440,
+      "height": 800
+    },
+    {
+      "id": "scrub-d1080",
+      "intent": "scrub",
+      "src": "/videos/media/hero/scrub/d1080-63df1e28ccae.mp4",
+      "bytes": 5677456,
+      "width": 1080,
+      "height": 600
+    },
+    {
+      "id": "scrub-d720",
+      "intent": "scrub",
+      "src": "/videos/media/hero/scrub/d720-a36b77dec96a.mp4",
+      "bytes": 2924949,
+      "width": 720,
+      "height": 400
+    },
+    {
+      "id": "scrub-m900",
+      "intent": "scrub",
+      "src": "/videos/media/hero/scrub/m900-d62ea99e185e.mp4",
+      "bytes": 9376542,
+      "width": 900,
+      "height": 1618
+    },
+    {
+      "id": "scrub-m720",
+      "intent": "scrub",
+      "src": "/videos/media/hero/scrub/m720-1b0da02ee6cd.mp4",
+      "bytes": 6599272,
+      "width": 720,
+      "height": 1294
+    },
+    {
+      "id": "scrub-m540",
+      "intent": "scrub",
+      "src": "/videos/media/hero/scrub/m540-1ce780460599.mp4",
+      "bytes": 4243922,
+      "width": 540,
+      "height": 970
+    },
+    {
+      "id": "playback-desktop",
+      "intent": "playback",
+      "src": "/videos/media/hero/playback/desktop-9bf214d77b7e.mp4",
+      "bytes": 1363160,
+      "width": 1080,
+      "height": 600
+    },
+    {
+      "id": "playback-mobile",
+      "intent": "playback",
+      "src": "/videos/media/hero/playback/mobile-f8f13460c014.mp4",
+      "bytes": 1620518,
+      "width": 720,
+      "height": 1294
+    },
+    {
+      "id": "poster-desktop",
+      "intent": "poster",
+      "src": "/videos/media/hero/posters/desktop-poster.webp",
+      "bytes": 36660
+    },
+    {
+      "id": "poster-mobile",
+      "intent": "poster",
+      "src": "/videos/media/hero/posters/mobile-poster.webp",
+      "bytes": 38636
+    }
+  ],
+  "defaults": {
+    "safeDefaultTier": {
+      "desktop": "d1080",
+      "mobile": "m720"
+    },
+    "poster": {
+      "desktop": "/videos/media/hero/posters/desktop-poster.webp",
+      "mobile": "/videos/media/hero/posters/mobile-poster.webp"
+    },
+    "playback": {
+      "desktop": "/videos/media/hero/playback/desktop-9bf214d77b7e.mp4",
+      "mobile": "/videos/media/hero/playback/mobile-f8f13460c014.mp4"
+    },
+    "ladderUrl": "/videos/media/hero/manifest.json",
+    "legacyLadderUrl": "/videos/media-ladder/media-ladder.json"
+  },
+  "certification": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "manifest_version",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "assets",
+        "pass": true,
+        "msg": "10 assets"
+      },
+      {
+        "name": "file_scrub-d1440",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_scrub-d1440",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "budget_scrub-d1440",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_scrub-d1080",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_scrub-d1080",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "budget_scrub-d1080",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_scrub-d720",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_scrub-d720",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "budget_scrub-d720",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_scrub-m900",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_scrub-m900",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "budget_scrub-m900",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_scrub-m720",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_scrub-m720",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "budget_scrub-m720",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_scrub-m540",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_scrub-m540",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "budget_scrub-m540",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_playback-desktop",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_playback-desktop",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_playback-mobile",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "cfr_playback-mobile",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_poster-desktop",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "file_poster-mobile",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "posters",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "scrub_desktop",
+        "pass": true,
+        "msg": "ok"
+      },
+      {
+        "name": "scrub_mobile",
+        "pass": true,
+        "msg": "ok"
+      }
+    ]
+  }
+}

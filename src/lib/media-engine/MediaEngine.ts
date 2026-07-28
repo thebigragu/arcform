@@ -5,16 +5,22 @@ import {
   markWebCodecsFailure,
   scoreCapabilities,
 } from "./adapt/CapabilityScorer";
+import { preflightAsset } from "./adapt/AssetPreflight";
 import { runRuntimeBenchmark } from "./adapt/RuntimeBenchmark";
 import {
   presentationRateFromFps,
   RuntimeIntelligence,
 } from "./adapt/RuntimeIntelligence";
-import { loadLadder, selectTier } from "./adapt/SourceSelector";
+import {
+  loadManifest,
+  selectTier,
+} from "./adapt/SourceSelector";
+import { playbackAssetForDevice } from "./adapt/manifestLoader";
 import { resizeBackingStore } from "./canvas/resizeBackingStore";
 import { PerformanceMonitor } from "./monitor/PerformanceMonitor";
 import type { MediaRenderer } from "./ports/MediaRenderer";
 import { HtmlVideoRenderer } from "./renderers/HtmlVideoRenderer";
+import { PlaybackVideoRenderer } from "./renderers/PlaybackVideoRenderer";
 import { PosterRenderer } from "./renderers/PosterRenderer";
 import { WebCodecsRenderer } from "./renderers/WebCodecsRenderer";
 import { AdaptiveBufferGovernor } from "./schedule/AdaptiveBufferGovernor";
@@ -22,12 +28,38 @@ import { PredictiveFrameScheduler } from "./schedule/PredictiveFrameScheduler";
 import { PresentClock } from "./schedule/PresentClock";
 import type {
   BenchmarkResult,
+  CapabilityScore,
   EngineStats,
+  ExperienceMode,
   LadderTier,
   MediaEngineOptions,
-  MediaLadderManifest,
   RendererId,
+  UnifiedMediaManifest,
 } from "./types";
+
+function selectBootExperienceMode(
+  capability: CapabilityScore,
+  benchmark: BenchmarkResult | null,
+  reducedMotion: boolean,
+): ExperienceMode {
+  if (reducedMotion || capability.prefersReducedMotion) return "poster";
+  if (!benchmark) return "full-scrub";
+  if (!benchmark.sustainable && benchmark.score < 40) return "playback";
+  if (!benchmark.sustainable || benchmark.score < 55) return "lite-scrub";
+  return "full-scrub";
+}
+
+function applyLiteScrubProfile(capability: CapabilityScore): CapabilityScore {
+  return {
+    ...capability,
+    maxDpr: Math.min(1.25, capability.maxDpr),
+    initialBufferBudgetFrames: Math.max(
+      6,
+      Math.round(capability.initialBufferBudgetFrames * 0.65),
+    ),
+    initialPresentFps: Math.min(30, capability.initialPresentFps),
+  };
+}
 
 async function fetchWithProgress(
   url: string,
@@ -84,7 +116,8 @@ export class MediaEngine {
   private ready = false;
   private droppedPresents = 0;
   private tier: LadderTier | null = null;
-  private manifest: MediaLadderManifest | null = null;
+  private manifest: UnifiedMediaManifest | null = null;
+  private experienceMode: ExperienceMode = "full-scrub";
   private capability = scoreCapabilities("desktop");
   private benchmark: BenchmarkResult | null = null;
   private presentClock: PresentClock;
@@ -206,6 +239,7 @@ export class MediaEngine {
 
     return {
       renderer: this.rendererId,
+      experienceMode: this.experienceMode,
       tierId: this.tier?.id ?? null,
       deviceBand: this.capability.band,
       targetPresentHz: presentationRateFromFps(
@@ -274,14 +308,42 @@ export class MediaEngine {
     let poster = this.options.poster ?? "";
 
     if (!src) {
-      this.manifest = await loadLadder(
-        this.options.ladderUrl ?? "/videos/media-ladder/media-ladder.json",
-      );
+      this.manifest = await loadManifest({
+        mediaId: this.options.mediaId,
+        ladderUrl: this.options.ladderUrl,
+      });
       this.tier = selectTier(
         this.manifest,
         this.capability,
         this.options.deviceClass,
       );
+
+      const preflight = await preflightAsset(
+        {
+          id: `scrub-${this.tier.id}`,
+          intent: "scrub",
+          src: this.tier.src,
+          width: this.tier.width,
+          height: this.tier.height,
+          fps: this.tier.fps,
+          bytes: this.tier.bytes,
+        },
+        this.capability,
+      );
+      if (
+        preflight.score < 40 &&
+        this.manifest.defaults?.safeDefaultTier
+      ) {
+        const conservative = this.manifest.defaults.safeDefaultTier[
+          this.options.deviceClass
+        ];
+        const alt = this.manifest.tiers.find(
+          (t) =>
+            t.id === conservative && t.device === this.options.deviceClass,
+        );
+        if (alt) this.tier = alt;
+      }
+
       src = this.tier.src;
       poster = this.tier.poster;
       this.frameCount = this.tier.frameCount;
@@ -373,6 +435,77 @@ export class MediaEngine {
       }
 
       this.presentClock.setTargetFps(this.benchmark.initialPresentHz);
+    }
+
+    this.experienceMode =
+      this.options.forceExperienceMode ??
+      selectBootExperienceMode(
+        this.capability,
+        this.benchmark,
+        Boolean(this.options.reducedMotion),
+      );
+    this.options.onExperienceModeChange?.(this.experienceMode);
+
+    if (this.experienceMode === "poster") {
+      await this.bootPoster();
+      this.options.onProgress?.(1);
+      this.ready = true;
+      this.markTtfvf();
+      this.options.onReady?.();
+      return;
+    }
+
+    if (this.experienceMode === "lite-scrub") {
+      this.capability = applyLiteScrubProfile(this.capability);
+      this.presentClock.setTargetFps(this.capability.initialPresentFps);
+      this.buffer.setBudget(this.capability.initialBufferBudgetFrames);
+      if (this.manifest && this.tier) {
+        const smaller = selectTier(
+          this.manifest,
+          {
+            ...this.capability,
+            band: "low",
+            recommendedTier:
+              this.options.deviceClass === "mobile"
+                ? ["m540", "m720"]
+                : ["d720", "d1080"],
+          },
+          this.options.deviceClass,
+          this.benchmark,
+        );
+        if (smaller.id !== this.tier.id) {
+          this.releaseBlob();
+          this.tier = smaller;
+          src = smaller.src;
+          poster = smaller.poster;
+          this.frameCount = smaller.frameCount;
+          this.width = smaller.width;
+          this.height = smaller.height;
+          const fetched = await fetchWithProgress(src, (p) =>
+            this.options.onProgress?.(0.85 + p * 0.1),
+          );
+          buffer = fetched.buffer;
+          blobUrl = fetched.blobUrl;
+          this.retainBlob(blobUrl);
+        }
+      }
+    }
+
+    if (this.experienceMode === "playback") {
+      const playback = this.manifest
+        ? playbackAssetForDevice(this.manifest, this.options.deviceClass)
+        : null;
+      const pbSrc = playback?.src ?? src;
+      const { blobUrl: pbBlob } = await fetchWithProgress(pbSrc, (p) =>
+        this.options.onProgress?.(0.85 + p * 0.15),
+      );
+      this.retainBlob(pbBlob);
+      await this.bootPlayback(pbSrc, pbBlob);
+      this.options.onProgress?.(1);
+      this.ready = true;
+      this.markTtfvf();
+      this.options.onReady?.();
+      return;
     }
 
     const chosenRenderer: RendererId = forceVideo
@@ -554,6 +687,35 @@ export class MediaEngine {
     await this.presentFirstFrame(wc);
   }
 
+  private async bootPlayback(src: string, blobUrl: string) {
+    const playback = new PlaybackVideoRenderer();
+    const frameCount = this.frameCount || 180;
+    this.predictor.reset(frameCount);
+    await playback.init({
+      canvas: this.options.canvas,
+      src,
+      blobUrl,
+      frameCount,
+      fps: this.tier?.fps || 30,
+      width: this.width || 1920,
+      height: this.height || 1080,
+      bufferBudgetFrames: this.buffer.getBudget(),
+      presentFps: this.presentClock.getTargetFps(),
+      maxDpr: this.capability.maxDpr,
+      playbackMount: this.options.playbackMount ?? this.options.canvas.parentElement,
+    });
+    this.setRenderer(playback, "playback");
+    this.experienceMode = "playback";
+    this.wireIntelligence();
+    playback.setTargetFrame(0, {
+      velocity: 0,
+      acceleration: 0,
+      direction: 0,
+      predictedIndices: [],
+    });
+    await this.presentFirstFrame(playback);
+  }
+
   private async bootVideo(src: string, blobUrl: string) {
     const video = new HtmlVideoRenderer();
     const frameCount = this.frameCount || 180;
@@ -592,11 +754,36 @@ export class MediaEngine {
     });
   }
 
+  private async switchToPlayback() {
+    if (this.disposed || this.rendererId === "playback") return;
+    this.monitor.markFallback();
+    this.renderer?.dispose();
+    const playback = this.manifest
+      ? playbackAssetForDevice(this.manifest, this.options.deviceClass)
+      : null;
+    const src = playback?.src || this.tier?.src || this.options.src || "";
+    const blobUrl = await this.ensureBlobUrl(src);
+    await this.bootPlayback(src, blobUrl);
+    this.experienceMode = "playback";
+    this.options.onExperienceModeChange?.("playback");
+  }
+
+  private async switchToPoster() {
+    if (this.disposed || this.rendererId === "poster") return;
+    this.monitor.markFallback();
+    this.renderer?.dispose();
+    await this.bootPoster();
+    this.experienceMode = "poster";
+    this.options.onExperienceModeChange?.("poster");
+  }
+
   private async bootPoster() {
-    const poster =
-      this.options.poster ||
-      this.tier?.poster ||
-      "/videos/media-ladder/d1440-poster.webp";
+    const poster = this.options.poster || this.tier?.poster || "";
+    if (!poster) {
+      throw new Error(
+        "Poster fallback required: provide options.poster or a tier with poster",
+      );
+    }
     const r = new PosterRenderer(poster);
     await r.init({
       canvas: this.options.canvas,
@@ -641,8 +828,20 @@ export class MediaEngine {
       presentClock: this.presentClock,
       buffer: this.buffer,
       capability: this.capability,
+      getExperienceMode: () => this.experienceMode,
+      onExperienceModeChange: (mode) => {
+        if (mode === "playback") void this.switchToPlayback();
+        else if (mode === "poster") void this.switchToPoster();
+        else if (mode === "lite-scrub") {
+          this.experienceMode = "lite-scrub";
+          this.capability = applyLiteScrubProfile(this.capability);
+          this.presentClock.setTargetFps(this.capability.initialPresentFps);
+          this.buffer.setBudget(this.capability.initialBufferBudgetFrames);
+          this.options.onExperienceModeChange?.("lite-scrub");
+        }
+      },
       onForceVideo: () => {
-        void this.switchToVideo();
+        void this.switchToPlayback();
       },
       onBufferPressure: () => {
         this.relieveBufferPressure();
@@ -705,7 +904,11 @@ export class MediaEngine {
       return;
     }
 
-    this.renderer.present(this.options.canvas);
+    const drew = this.renderer.present(this.options.canvas);
+    if (!drew && this.frameIndex === this.lastPresentedFrame) {
+      return;
+    }
+
     this.lastPresentedFrame = this.frameIndex;
     this.lastPresentAt = performance.now();
     this.monitor.recordPresentFrame(rs.lastDrawMs + rs.decodeLatencyMs * 0.15);

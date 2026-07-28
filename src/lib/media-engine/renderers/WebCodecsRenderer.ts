@@ -38,10 +38,14 @@ export class WebCodecsRenderer implements MediaRenderer {
   private governor: AdaptiveBufferGovernor | null = null;
   private ctx: RendererContext | null = null;
   private playhead = 0;
+  private lastDrawnFrame = -1;
   private serial: Promise<unknown> = Promise.resolve();
   private decodeGeneration = 0;
   private queuedDecodes = 0;
   private closed = false;
+  private decoder: VideoDecoder | null = null;
+  private pendingResolve: ((frame: VideoFrame) => void) | null = null;
+  private pendingReject: ((error: Error) => void) | null = null;
   private lastHint: PredictHint = {
     velocity: 0,
     acceleration: 0,
@@ -132,11 +136,11 @@ export class WebCodecsRenderer implements MediaRenderer {
     this.evict();
   }
 
-  present(canvas: HTMLCanvasElement | OffscreenCanvas): void {
+  present(canvas: HTMLCanvasElement | OffscreenCanvas): boolean {
     const ctx2d =
       (canvas as HTMLCanvasElement).getContext?.("2d") ??
       (canvas as OffscreenCanvas).getContext("2d");
-    if (!ctx2d || !this.demux) return;
+    if (!ctx2d || !this.demux) return false;
 
     let frame = this.cache.get(this.playhead) ?? null;
     if (!frame) {
@@ -151,7 +155,9 @@ export class WebCodecsRenderer implements MediaRenderer {
       }
       if (best !== null) frame = this.cache.get(best) ?? null;
     }
-    if (!frame) return;
+    if (!frame) return false;
+
+    if (this.playhead === this.lastDrawnFrame) return false;
 
     const t0 = performance.now();
     drawCover(
@@ -168,6 +174,8 @@ export class WebCodecsRenderer implements MediaRenderer {
     this.stats.estimatedMemoryMb =
       (this.cache.size * this.demux.meta.width * this.demux.meta.height * 4) /
       (1024 * 1024);
+    this.lastDrawnFrame = this.playhead;
+    return true;
   }
 
   getStats(): RendererStats {
@@ -184,6 +192,14 @@ export class WebCodecsRenderer implements MediaRenderer {
     this.decodeGeneration += 1;
     for (const frame of this.cache.values()) frame.close();
     this.cache.clear();
+    if (this.decoder) {
+      try {
+        if (this.decoder.state !== "closed") this.decoder.close();
+      } catch {
+        /* */
+      }
+      this.decoder = null;
+    }
     this.demux = null;
   }
 
@@ -231,47 +247,56 @@ export class WebCodecsRenderer implements MediaRenderer {
     }
   }
 
-  private decodeSample(sample: DemuxResult["samples"][number]): Promise<VideoFrame> {
+  private ensureDecoder(): VideoDecoder {
+    if (this.decoder && this.decoder.state !== "closed") return this.decoder;
     const demux = this.demux!;
+    this.decoder = new VideoDecoder({
+      output: (frame) => {
+        this.pendingResolve?.(frame);
+        this.pendingResolve = null;
+      },
+      error: (e) => {
+        this.pendingReject?.(e instanceof Error ? e : new Error(String(e)));
+        this.pendingReject = null;
+      },
+    });
+    this.decoder.configure(demux.config);
+    return this.decoder;
+  }
+
+  private decodeSample(sample: DemuxResult["samples"][number]): Promise<VideoFrame> {
+    const decoder = this.ensureDecoder();
     return new Promise((resolve, reject) => {
-      let output: VideoFrame | null = null;
-      const decoder = new VideoDecoder({
-        output: (frame) => {
-          output = frame;
-        },
-        error: (e) => {
-          try {
-            decoder.close();
-          } catch {
-            /* */
+      this.pendingResolve = resolve;
+      this.pendingReject = reject;
+      try {
+        decoder.decode(
+          new EncodedVideoChunk({
+            type: sample.isKey ? "key" : "delta",
+            timestamp: sample.timestamp,
+            duration: sample.duration,
+            data: sample.data,
+          }),
+        );
+        void decoder.flush().then(() => {
+          if (this.pendingResolve) {
+            const err = new Error("No frame");
+            this.pendingReject?.(err);
+            this.pendingResolve = null;
+            this.pendingReject = null;
+            reject(err);
           }
-          reject(e);
-        },
-      });
-      decoder.configure(demux.config);
-      decoder.decode(
-        new EncodedVideoChunk({
-          type: sample.isKey ? "key" : "delta",
-          timestamp: sample.timestamp,
-          duration: sample.duration,
-          data: sample.data,
-        }),
-      );
-      void decoder
-        .flush()
-        .then(() => {
-          decoder.close();
-          if (!output) reject(new Error("No frame"));
-          else resolve(output);
-        })
-        .catch((e) => {
-          try {
-            decoder.close();
-          } catch {
-            /* */
-          }
+        }).catch((e) => {
+          this.pendingReject?.(e instanceof Error ? e : new Error(String(e)));
+          this.pendingResolve = null;
+          this.pendingReject = null;
           reject(e);
         });
+      } catch (e) {
+        this.pendingResolve = null;
+        this.pendingReject = null;
+        reject(e instanceof Error ? e : new Error(String(e)));
+      }
     });
   }
 

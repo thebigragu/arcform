@@ -15,13 +15,13 @@ type HeroPreloadContextValue = {
   progress: number;
   /** Site shell may dismiss loader — poster painted + variant known */
   ready: boolean;
-  /** Media engine first canvas present — poster swap in HeroMedia */
+  /** Media engine first canvas present — poster swap in MediaView */
   engineReady: boolean;
   error: string | null;
   variant: "desktop" | "mobile" | null;
   heroRequired: boolean;
   signalPosterReady: () => void;
-  /** Engine first-paint — call from HeroMedia onReady */
+  /** Engine first-paint — call from MediaView onReady */
   signalEngineReady: () => void;
   reportProgress: (p: number) => void;
   reportError: (message: string | null) => void;
@@ -31,7 +31,7 @@ const HeroPreloadContext = createContext<HeroPreloadContextValue | null>(null);
 
 /**
  * V2.2 poster-first gate: loader dismisses on poster + variant, not full MP4 fetch.
- * Engine initializes in background; HeroMedia swaps poster on first present.
+ * Engine initializes in background; MediaView swaps poster on first present.
  */
 export function HeroPreloadProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();

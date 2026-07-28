@@ -1,6 +1,6 @@
 /** Media Engine v2 — shared types (no Next.js / React imports). */
 
-export type RendererId = "webcodecs" | "html-video" | "poster";
+export type RendererId = "webcodecs" | "html-video" | "playback" | "poster";
 
 export type RendererPreference = "auto" | RendererId;
 
@@ -19,8 +19,18 @@ export type QualityTierId =
   | "d1440"
   | "d1080"
   | "d1280"
+  | "d720"
   | "m900"
-  | "m720";
+  | "m720"
+  | "m540";
+
+export type ExperienceMode =
+  | "full-scrub"
+  | "lite-scrub"
+  | "playback"
+  | "poster";
+
+export type MediaAssetIntent = "scrub" | "playback" | "poster";
 
 export type PredictHint = {
   velocity: number;
@@ -36,7 +46,8 @@ export type AdaptationEventType =
   | "renderer-fallback"
   | "renderer-pick"
   | "tier-boot"
-  | "predictive-downgrade";
+  | "predictive-downgrade"
+  | "experience-mode";
 
 export type AdaptationEvent = {
   type: AdaptationEventType;
@@ -57,6 +68,7 @@ export type RendererStats = {
 
 export type EngineStats = {
   renderer: RendererId;
+  experienceMode: ExperienceMode;
   tierId: string | null;
   deviceBand: DeviceCapabilityBand;
   targetPresentHz: PresentationRate;
@@ -151,9 +163,67 @@ export type MediaLadderManifest = {
   version: number;
   fpsSource: number;
   gop: number;
-  crf: number;
+  crf?: number;
   codec: string;
   tiers: LadderTier[];
+};
+
+export type MediaAsset = {
+  id: string;
+  intent: MediaAssetIntent;
+  device?: DeviceClass;
+  tierId?: string | null;
+  maxWidth?: number;
+  src: string;
+  poster?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  fps?: number;
+  frameCount?: number;
+  bytes?: number;
+  bitrate?: number;
+  codec?: string;
+  gop?: number;
+  crf?: number;
+  contentHash?: string;
+  recommendedBands?: DeviceCapabilityBand[];
+  safeDefaultTier?: string;
+  fallbackAssetId?: string;
+};
+
+export type MediaManifestDefaults = {
+  safeDefaultTier: { desktop: QualityTierId; mobile: QualityTierId };
+  poster: { desktop: string; mobile: string };
+  playback: { desktop: string; mobile: string };
+  ladderUrl: string;
+  /** Optional — only when legacy ladder sync is enabled. */
+  legacyLadderUrl?: string;
+};
+
+export type MediaManifestV4 = {
+  version: 4;
+  mediaId: string;
+  createdAt: string;
+  fpsSource: number;
+  gop: number;
+  codec: string;
+  sources?: Record<string, unknown>;
+  defaults: MediaManifestDefaults;
+  assets: MediaAsset[];
+};
+
+/** Normalized manifest consumed by runtime (v3 ladder or v4 assets). */
+export type UnifiedMediaManifest = {
+  version: number;
+  mediaId?: string;
+  fpsSource: number;
+  gop: number;
+  codec: string;
+  tiers: LadderTier[];
+  defaults?: MediaManifestDefaults;
+  assets: MediaAsset[];
+  manifestUrl: string;
 };
 
 export type EncodedSample = {
@@ -178,12 +248,16 @@ export type DemuxResult = {
 export type MediaEngineOptions = {
   canvas: HTMLCanvasElement;
   deviceClass: DeviceClass;
+  /** V4 hashed manifest under /videos/media/{id}/manifest.json */
+  mediaId?: string;
   ladderUrl?: string;
   /** Force a single source (skips ladder). */
   src?: string;
   poster?: string;
   renderer?: RendererPreference;
   reducedMotion?: boolean;
+  /** Dev/cert: skip benchmark selection and force experience mode. */
+  forceExperienceMode?: ExperienceMode;
   analytics?: boolean;
   /**
    * Future: Mediabunny UrlSource progressive demux (skip full-file buffer).
@@ -193,9 +267,12 @@ export type MediaEngineOptions = {
   initTimeoutMs?: number;
   /** Shell-provided navigation start for TTFP/TTFVF scorecard. */
   navigationStart?: number;
+  /** Visible playback surface for playback experience mode (ADR-024). */
+  playbackMount?: HTMLElement | null;
   onProgress?: (p: number) => void;
   onReady?: () => void;
   onFatal?: (error: Error) => void;
   onStats?: (stats: EngineStats) => void;
   onRendererChange?: (id: RendererId) => void;
+  onExperienceModeChange?: (mode: ExperienceMode) => void;
 };

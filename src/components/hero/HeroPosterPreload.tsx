@@ -2,38 +2,51 @@
 
 import { useHeroPreloadOptional } from "@/context/HeroPreloadContext";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
-import { useEffect } from "react";
-
-const POSTER_DESKTOP = "/videos/media-ladder/d1440-poster.webp";
-const POSTER_MOBILE = "/videos/media-ladder/m900-poster.webp";
+import {
+  HERO_MEDIA_ID,
+  HERO_POSTER_FALLBACK,
+  heroPosterPath,
+  loadHeroDefaults,
+} from "@/lib/media-engine/heroDefaults";
+import { useEffect, useState } from "react";
 
 /**
- * V2.2 poster-first: preload hero poster before ScrollHero mounts so TTFP is fast.
+ * Skill-aligned poster-first preload for the site hero (mediaId=hero).
  */
 export function HeroPosterPreload() {
   const preload = useHeroPreloadOptional();
   const mobile = useHeroMobileVideo();
+  const [posterSrc, setPosterSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!preload?.heroRequired || mobile === null) return;
+    void loadHeroDefaults().then((defaults) => {
+      if (mobile === null) return;
+      setPosterSrc(heroPosterPath(mobile ? "mobile" : "desktop", defaults));
+    });
+  }, [mobile]);
 
-    const src = mobile ? POSTER_MOBILE : POSTER_DESKTOP;
+  useEffect(() => {
+    if (!preload?.heroRequired || mobile === null || !posterSrc) return;
+
     const img = new Image();
     img.fetchPriority = "high";
     img.decoding = "sync";
     img.onload = () => preload.signalPosterReady();
     img.onerror = () => preload.signalPosterReady();
-    img.src = src;
+    img.src = posterSrc;
 
     return () => {
       img.onload = null;
       img.onerror = null;
     };
-  }, [preload, mobile]);
+  }, [preload, mobile, posterSrc]);
 
   return null;
 }
 
-export function heroPosterPath(deviceClass: "desktop" | "mobile") {
-  return deviceClass === "mobile" ? POSTER_MOBILE : POSTER_DESKTOP;
-}
+export {
+  HERO_MEDIA_ID,
+  HERO_POSTER_FALLBACK,
+  heroPosterPath,
+  loadHeroDefaults,
+};

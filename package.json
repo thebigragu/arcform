@@ -18,7 +18,10 @@
     "videos:process": "blender --background --python blender/render_process_atrium_loop.py",
     "videos:encode": "node scripts/encode-videos.cjs",
     "videos": "npm run videos:encode",
-    "media:ladder": "node scripts/encode-media-ladder.cjs"
+    "media:ladder": "node scripts/encode-media-ladder.cjs",
+    "media:ingest": "node scripts/media-ingest/index.cjs",
+    "media:certify": "node scripts/media-certify/index.cjs",
+    "media:certify:runtime": "node scripts/media-certify-runtime.cjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -45,6 +48,7 @@
     "@types/three": "^0.185.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "playwright": "^1.62.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -1,0 +1,87 @@
+{
+  "version": 3,
+  "fpsSource": 30,
+  "gop": 1,
+  "crf": 21,
+  "codec": "avc1",
+  "tiers": [
+    {
+      "id": "d1440",
+      "device": "desktop",
+      "maxWidth": 1440,
+      "src": "/videos/media/hero/scrub/d1440-bd5a58e16910.mp4",
+      "poster": "/videos/media/hero/posters/desktop-poster.webp",
+      "width": 1440,
+      "height": 800,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 8767771
+    },
+    {
+      "id": "d1080",
+      "device": "desktop",
+      "maxWidth": 1080,
+      "src": "/videos/media/hero/scrub/d1080-63df1e28ccae.mp4",
+      "poster": "/videos/media/hero/posters/desktop-poster.webp",
+      "width": 1080,
+      "height": 600,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 5677456
+    },
+    {
+      "id": "d720",
+      "device": "desktop",
+      "maxWidth": 720,
+      "src": "/videos/media/hero/scrub/d720-a36b77dec96a.mp4",
+      "poster": "/videos/media/hero/posters/desktop-poster.webp",
+      "width": 720,
+      "height": 400,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 2924949
+    },
+    {
+      "id": "m900",
+      "device": "mobile",
+      "maxWidth": 900,
+      "src": "/videos/media/hero/scrub/m900-d62ea99e185e.mp4",
+      "poster": "/videos/media/hero/posters/mobile-poster.webp",
+      "width": 900,
+      "height": 1618,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 9376542
+    },
+    {
+      "id": "m720",
+      "device": "mobile",
+      "maxWidth": 720,
+      "src": "/videos/media/hero/scrub/m720-1b0da02ee6cd.mp4",
+      "poster": "/videos/media/hero/posters/mobile-poster.webp",
+      "width": 720,
+      "height": 1294,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 6599272
+    },
+    {
+      "id": "m540",
+      "device": "mobile",
+      "maxWidth": 540,
+      "src": "/videos/media/hero/scrub/m540-1ce780460599.mp4",
+      "poster": "/videos/media/hero/posters/mobile-poster.webp",
+      "width": 540,
+      "height": 970,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 4243922
+    }
+  ]
+}

@@ -148,19 +148,21 @@ function bandTierOrder(
   band: DeviceCapabilityBand,
   deviceClass: DeviceClass,
 ): QualityTierId[] {
-  if (deviceClass === "mobile") return ["m900"];
+  if (deviceClass === "mobile") {
+    return ["m720", "m900", "m540"];
+  }
 
   switch (band) {
     case "ultra":
     case "high":
-      return ["d1440", "d1080"];
+      return ["d1080", "d1440", "d720"];
     case "medium":
-      return ["d1080", "d1440"];
+      return ["d1080", "d720", "d1440"];
     case "low":
     case "minimal":
-      return ["d1080"];
+      return ["d720", "d1080"];
     default:
-      return ["d1080"];
+      return ["d1080", "d720"];
   }
 }
 

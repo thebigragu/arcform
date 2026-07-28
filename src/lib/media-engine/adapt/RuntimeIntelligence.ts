@@ -3,6 +3,7 @@ import type { AdaptiveBufferGovernor } from "../schedule/AdaptiveBufferGovernor"
 import type {
   AdaptationEvent,
   CapabilityScore,
+  ExperienceMode,
   PresentationRate,
 } from "../types";
 
@@ -31,6 +32,8 @@ type AdaptHooks = {
   onForceVideo?: () => void;
   onBufferPressure?: () => void;
   onAdaptEvent?: (event: AdaptationEvent) => void;
+  onExperienceModeChange?: (mode: ExperienceMode) => void;
+  getExperienceMode?: () => ExperienceMode;
 };
 
 /**
@@ -42,6 +45,8 @@ export class RuntimeIntelligence {
   private unhealthyStreak = 0;
   private healthyStreak = 0;
   private forcedVideo = false;
+  private forcedPoster = false;
+  private liteScrubApplied = false;
   private pressureApplied = false;
   private decodeLatencyHistory: number[] = [];
   private queueHistory: number[] = [];
@@ -132,6 +137,43 @@ export class RuntimeIntelligence {
       this.stepPresentationUp(now);
     }
 
+    if (this.unhealthyStreak >= 4 && !this.liteScrubApplied) {
+      this.liteScrubApplied = true;
+      this.emit({
+        type: "experience-mode",
+        detail: "lite-scrub",
+        at: now,
+      });
+      this.hooks.onExperienceModeChange?.("lite-scrub");
+      this.hooks.presentClock.setTargetFps(
+        Math.min(30, this.hooks.presentClock.getTargetFps()),
+      );
+      this.lastAdaptAt = now;
+    }
+
+    if (this.unhealthyStreak >= 5 && !this.forcedVideo) {
+      this.forcedVideo = true;
+      this.emit({
+        type: "experience-mode",
+        detail: "playback",
+        at: now,
+      });
+      this.hooks.onExperienceModeChange?.("playback");
+      this.hooks.onForceVideo?.();
+      this.lastAdaptAt = now;
+    }
+
+    if (this.unhealthyStreak >= 7 && !this.forcedPoster) {
+      this.forcedPoster = true;
+      this.emit({
+        type: "experience-mode",
+        detail: "poster",
+        at: now,
+      });
+      this.hooks.onExperienceModeChange?.("poster");
+      this.lastAdaptAt = now;
+    }
+
     if (this.unhealthyStreak >= 3 && !this.pressureApplied && !this.forcedVideo) {
       this.pressureApplied = true;
       this.emit({
@@ -140,17 +182,6 @@ export class RuntimeIntelligence {
         at: now,
       });
       this.hooks.onBufferPressure?.();
-      this.lastAdaptAt = now;
-    }
-
-    if (this.unhealthyStreak >= 5 && !this.forcedVideo) {
-      this.forcedVideo = true;
-      this.emit({
-        type: "renderer-fallback",
-        detail: "html-video",
-        at: now,
-      });
-      this.hooks.onForceVideo?.();
       this.lastAdaptAt = now;
     }
 

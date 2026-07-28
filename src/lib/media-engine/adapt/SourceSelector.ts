@@ -1,26 +1,22 @@
-import type { CapabilityScore, BenchmarkResult } from "../types";
-import type { MediaLadderManifest, LadderTier } from "../types";
-
-const DEFAULT_LADDER = "/videos/media-ladder/media-ladder.json";
-
-export async function loadLadder(
-  url = DEFAULT_LADDER,
-): Promise<MediaLadderManifest> {
-  const res = await fetch(url, { cache: "force-cache" });
-  if (!res.ok) throw new Error(`ladder ${res.status}`);
-  return (await res.json()) as MediaLadderManifest;
-}
+import type { CapabilityScore, BenchmarkResult, LadderTier } from "../types";
+import type { UnifiedMediaManifest } from "../types";
+import type { QualityTierId } from "../types";
 
 /** Pick best tier for device class + capability (first recommended that exists). */
 export function selectTier(
-  manifest: MediaLadderManifest,
+  manifest: UnifiedMediaManifest,
   capability: CapabilityScore,
   deviceClass: "desktop" | "mobile",
   benchmark?: BenchmarkResult | null,
 ): LadderTier {
   const pool = manifest.tiers.filter((t) => t.device === deviceClass);
 
-  let order = capability.recommendedTier;
+  const manifestDefault = manifest.defaults?.safeDefaultTier?.[deviceClass];
+
+  let order = [...capability.recommendedTier];
+  if (manifestDefault) {
+    order = [manifestDefault as QualityTierId, ...order.filter((id) => id !== manifestDefault)];
+  }
   if (benchmark?.recommendedTierHint) {
     const hint = benchmark.recommendedTierHint;
     order = [hint, ...order.filter((id) => id !== hint)];
@@ -55,7 +51,7 @@ export function selectTier(
  * Runtime adaptation must not pretend this reloads a smaller MP4.
  */
 export function downshiftTier(
-  manifest: MediaLadderManifest,
+  manifest: UnifiedMediaManifest,
   current: LadderTier,
 ): LadderTier | null {
   const same = manifest.tiers
@@ -65,3 +61,5 @@ export function downshiftTier(
   if (idx < 0 || idx >= same.length - 1) return null;
   return same[idx + 1] ?? null;
 }
+
+export { loadManifest, loadLadder, manifestUrlForMediaId } from "./manifestLoader";

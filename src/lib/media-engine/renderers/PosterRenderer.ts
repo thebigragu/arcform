@@ -9,6 +9,7 @@ export class PosterRenderer implements MediaRenderer {
   private img: HTMLImageElement | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private maxDpr = 2;
+  private drawn = false;
   private stats: RendererStats = {
     cacheSize: 0,
     cacheHits: 0,
@@ -44,15 +45,25 @@ export class PosterRenderer implements MediaRenderer {
     /* static */
   }
 
-  present(canvas: HTMLCanvasElement | OffscreenCanvas): void {
+  present(canvas: HTMLCanvasElement | OffscreenCanvas): boolean {
+    if (this.drawn) return false;
     const img = this.img;
     const ctx2d = (canvas as HTMLCanvasElement).getContext?.("2d") ??
       (canvas as OffscreenCanvas).getContext("2d");
-    if (!img || !ctx2d || !img.naturalWidth) return;
+    if (!img || !ctx2d || !img.naturalWidth) return false;
     const t0 = performance.now();
-    drawCover(ctx2d, img, img.naturalWidth, img.naturalHeight, canvas.width, canvas.height);
+    drawCover(
+      ctx2d,
+      img,
+      img.naturalWidth,
+      img.naturalHeight,
+      canvas.width,
+      canvas.height,
+    );
     this.stats.lastDrawMs = performance.now() - t0;
     this.stats.cacheHits += 1;
+    this.drawn = true;
+    return true;
   }
 
   getStats(): RendererStats {

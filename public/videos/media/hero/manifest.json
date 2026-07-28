@@ -1,0 +1,294 @@
+{
+  "version": 4,
+  "mediaId": "hero",
+  "createdAt": "2026-07-28T14:23:49.927Z",
+  "fpsSource": 30,
+  "gop": 1,
+  "codec": "avc1",
+  "sources": {
+    "desktop": {
+      "probe": {
+        "path": "public/videos/hero-master-desktop.mp4",
+        "codec": "hevc",
+        "profile": "Main 10",
+        "pixFmt": "yuv420p10le",
+        "bitDepth": 10,
+        "width": 3838,
+        "height": 2134,
+        "sar": "1:1",
+        "dar": "1919:1067",
+        "duration": 6,
+        "fps": 30,
+        "avgFps": 30,
+        "nbFrames": 180,
+        "bitrate": 121356592,
+        "fileSize": 91017444,
+        "colorPrimaries": null,
+        "colorTransfer": null,
+        "colorSpace": null,
+        "rotation": 0,
+        "hasAudio": false,
+        "isLandscape": true
+      },
+      "normalized": [
+        "cfr30",
+        "square_pixels",
+        "yuv420p",
+        "no_audio",
+        "faststart"
+      ]
+    },
+    "mobile": {
+      "probe": {
+        "path": "public/videos/hero-master-mobile.mp4",
+        "codec": "hevc",
+        "profile": "Main 10",
+        "pixFmt": "yuv420p10le",
+        "bitDepth": 10,
+        "width": 2134,
+        "height": 3838,
+        "sar": "1:1",
+        "dar": "1067:1919",
+        "duration": 6,
+        "fps": 30,
+        "avgFps": 30,
+        "nbFrames": 180,
+        "bitrate": 120706598,
+        "fileSize": 90529949,
+        "colorPrimaries": null,
+        "colorTransfer": null,
+        "colorSpace": null,
+        "rotation": 0,
+        "hasAudio": false,
+        "isLandscape": false
+      },
+      "normalized": [
+        "cfr30",
+        "square_pixels",
+        "yuv420p",
+        "no_audio",
+        "faststart"
+      ]
+    }
+  },
+  "defaults": {
+    "safeDefaultTier": {
+      "desktop": "d1080",
+      "mobile": "m720"
+    },
+    "poster": {
+      "desktop": "/videos/media/hero/posters/desktop-poster.webp",
+      "mobile": "/videos/media/hero/posters/mobile-poster.webp"
+    },
+    "playback": {
+      "desktop": "/videos/media/hero/playback/desktop-9bf214d77b7e.mp4",
+      "mobile": "/videos/media/hero/playback/mobile-f8f13460c014.mp4"
+    },
+    "ladderUrl": "/videos/media/hero/manifest.json",
+    "legacyLadderUrl": "/videos/media-ladder/media-ladder.json"
+  },
+  "assets": [
+    {
+      "id": "scrub-d1440",
+      "intent": "scrub",
+      "tierId": "d1440",
+      "device": "desktop",
+      "maxWidth": 1440,
+      "src": "/videos/media/hero/scrub/d1440-bd5a58e16910.mp4",
+      "width": 1440,
+      "height": 800,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 8767771,
+      "bitrate": 11690361,
+      "codec": "avc1",
+      "gop": 1,
+      "crf": 21,
+      "contentHash": "bd5a58e16910",
+      "recommendedBands": [
+        "ultra",
+        "high"
+      ],
+      "safeDefaultTier": "d1080",
+      "poster": "/videos/media/hero/posters/desktop-poster.webp"
+    },
+    {
+      "id": "scrub-d1080",
+      "intent": "scrub",
+      "tierId": "d1080",
+      "device": "desktop",
+      "maxWidth": 1080,
+      "src": "/videos/media/hero/scrub/d1080-63df1e28ccae.mp4",
+      "width": 1080,
+      "height": 600,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 5677456,
+      "bitrate": 7569941,
+      "codec": "avc1",
+      "gop": 1,
+      "crf": 21,
+      "contentHash": "63df1e28ccae",
+      "recommendedBands": [
+        "ultra",
+        "high"
+      ],
+      "safeDefaultTier": "d1080",
+      "poster": "/videos/media/hero/posters/desktop-poster.webp"
+    },
+    {
+      "id": "scrub-d720",
+      "intent": "scrub",
+      "tierId": "d720",
+      "device": "desktop",
+      "maxWidth": 720,
+      "src": "/videos/media/hero/scrub/d720-a36b77dec96a.mp4",
+      "width": 720,
+      "height": 400,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 2924949,
+      "bitrate": 3899932,
+      "codec": "avc1",
+      "gop": 1,
+      "crf": 21,
+      "contentHash": "a36b77dec96a",
+      "recommendedBands": [
+        "ultra",
+        "high"
+      ],
+      "safeDefaultTier": "d720",
+      "poster": "/videos/media/hero/posters/desktop-poster.webp"
+    },
+    {
+      "id": "scrub-m900",
+      "intent": "scrub",
+      "tierId": "m900",
+      "device": "mobile",
+      "maxWidth": 900,
+      "src": "/videos/media/hero/scrub/m900-d62ea99e185e.mp4",
+      "width": 900,
+      "height": 1618,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 9376542,
+      "bitrate": 12502056,
+      "codec": "avc1",
+      "gop": 1,
+      "crf": 21,
+      "contentHash": "d62ea99e185e",
+      "recommendedBands": [
+        "ultra",
+        "high"
+      ],
+      "safeDefaultTier": "m900",
+      "poster": "/videos/media/hero/posters/mobile-poster.webp"
+    },
+    {
+      "id": "scrub-m720",
+      "intent": "scrub",
+      "tierId": "m720",
+      "device": "mobile",
+      "maxWidth": 720,
+      "src": "/videos/media/hero/scrub/m720-1b0da02ee6cd.mp4",
+      "width": 720,
+      "height": 1294,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 6599272,
+      "bitrate": 8799029,
+      "codec": "avc1",
+      "gop": 1,
+      "crf": 21,
+      "contentHash": "1b0da02ee6cd",
+      "recommendedBands": [
+        "ultra",
+        "high"
+      ],
+      "safeDefaultTier": "m720",
+      "poster": "/videos/media/hero/posters/mobile-poster.webp"
+    },
+    {
+      "id": "scrub-m540",
+      "intent": "scrub",
+      "tierId": "m540",
+      "device": "mobile",
+      "maxWidth": 540,
+      "src": "/videos/media/hero/scrub/m540-1ce780460599.mp4",
+      "width": 540,
+      "height": 970,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 4243922,
+      "bitrate": 5658562,
+      "codec": "avc1",
+      "gop": 1,
+      "crf": 21,
+      "contentHash": "1ce780460599",
+      "recommendedBands": [
+        "ultra",
+        "high"
+      ],
+      "safeDefaultTier": "m540",
+      "poster": "/videos/media/hero/posters/mobile-poster.webp"
+    },
+    {
+      "id": "playback-desktop",
+      "intent": "playback",
+      "device": "desktop",
+      "tierId": null,
+      "maxWidth": 1080,
+      "src": "/videos/media/hero/playback/desktop-9bf214d77b7e.mp4",
+      "width": 1080,
+      "height": 600,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 1363160,
+      "bitrate": 1817546,
+      "codec": "avc1",
+      "gop": 60,
+      "contentHash": "9bf214d77b7e"
+    },
+    {
+      "id": "playback-mobile",
+      "intent": "playback",
+      "device": "mobile",
+      "tierId": null,
+      "maxWidth": 720,
+      "src": "/videos/media/hero/playback/mobile-f8f13460c014.mp4",
+      "width": 720,
+      "height": 1294,
+      "duration": 6,
+      "fps": 30,
+      "frameCount": 180,
+      "bytes": 1620518,
+      "bitrate": 2160690,
+      "codec": "avc1",
+      "gop": 60,
+      "contentHash": "f8f13460c014"
+    },
+    {
+      "id": "poster-desktop",
+      "intent": "poster",
+      "device": "desktop",
+      "src": "/videos/media/hero/posters/desktop-poster.webp",
+      "bytes": 36660,
+      "contentHash": "e330b5c287b3"
+    },
+    {
+      "id": "poster-mobile",
+      "intent": "poster",
+      "device": "mobile",
+      "src": "/videos/media/hero/posters/mobile-poster.webp",
+      "bytes": 38636,
+      "contentHash": "ed40bb19093f"
+    }
+  ]
+}

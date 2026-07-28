@@ -48,3 +48,11 @@ next-env.d.ts
 /public/videos/hero-master-mobile.mp4
 /public/videos/hero-kling.mp4
 /public/videos/hero-kling-mobile.mp4
+/public/videos/media/*/masters/
+
+# media-engine:begin
+.media-engine/rollback/
+.media-engine/cache/
+.media-engine/temp/
+.media-engine/logs/
+# media-engine:end

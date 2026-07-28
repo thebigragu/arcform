@@ -1,5 +1,6 @@
 /**
- * Adaptive present FPS — subsample master 60fps timeline without alternate assets.
+ * Adaptive present FPS — subsample master timeline without alternate assets.
+ * V2.3: 60 → 45 → 30 → 20 Hz states.
  */
 export class PresentClock {
   private targetFps: number;
@@ -21,7 +22,25 @@ export class PresentClock {
   }
 
   setTargetFps(fps: number) {
-    this.targetFps = Math.max(15, Math.min(60, Math.round(fps)));
+    const allowed = [60, 45, 30, 20];
+    const rounded = Math.round(fps);
+    const nearest = allowed.reduce((best, v) =>
+      Math.abs(v - rounded) < Math.abs(best - rounded) ? v : best,
+    );
+    this.targetFps = nearest;
+  }
+
+  stepDown() {
+    if (this.targetFps > 45) this.targetFps = 45;
+    else if (this.targetFps > 30) this.targetFps = 30;
+    else if (this.targetFps > 20) this.targetFps = 20;
+  }
+
+  stepUp() {
+    if (this.targetFps < 20) this.targetFps = 20;
+    else if (this.targetFps < 30) this.targetFps = 30;
+    else if (this.targetFps < 45) this.targetFps = 45;
+    else if (this.targetFps < 60) this.targetFps = 60;
   }
 
   /** Returns true if this rAF should draw. */
@@ -38,17 +57,16 @@ export class PresentClock {
     return true;
   }
 
-  /** Step down/up from health. */
+  /** Step down/up from health (legacy direct adapt — prefer RuntimeIntelligence). */
   adapt(measuredFps: number, decodeLatencyMs: number) {
     if (measuredFps < this.targetFps * 0.7 || decodeLatencyMs > 28) {
-      if (this.targetFps > 30) this.targetFps = 30;
-      else if (this.targetFps > 20) this.targetFps = 20;
+      this.stepDown();
     } else if (
       measuredFps > this.targetFps * 0.95 &&
       decodeLatencyMs < 10 &&
       this.targetFps < 60
     ) {
-      this.targetFps = this.targetFps < 30 ? 30 : 60;
+      this.stepUp();
     }
   }
 }

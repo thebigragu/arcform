@@ -1,4 +1,5 @@
-import type { CapabilityScore, LadderTier, MediaLadderManifest } from "../types";
+import type { CapabilityScore, BenchmarkResult } from "../types";
+import type { MediaLadderManifest, LadderTier } from "../types";
 
 const DEFAULT_LADDER = "/videos/media-ladder/media-ladder.json";
 
@@ -10,15 +11,23 @@ export async function loadLadder(
   return (await res.json()) as MediaLadderManifest;
 }
 
-/** Pick best tier for device class + score (first recommended that exists). */
+/** Pick best tier for device class + capability (first recommended that exists). */
 export function selectTier(
   manifest: MediaLadderManifest,
   capability: CapabilityScore,
   deviceClass: "desktop" | "mobile",
+  benchmark?: BenchmarkResult | null,
 ): LadderTier {
   const pool = manifest.tiers.filter((t) => t.device === deviceClass);
+
+  let order = capability.recommendedTier;
+  if (benchmark?.recommendedTierHint) {
+    const hint = benchmark.recommendedTierHint;
+    order = [hint, ...order.filter((id) => id !== hint)];
+  }
+
   const ordered =
-    capability.recommendedTier
+    order
       .map((id) => pool.find((t) => t.id === id))
       .filter(Boolean) as LadderTier[];
 
@@ -28,9 +37,15 @@ export function selectTier(
     if (!any) throw new Error("Empty media ladder");
     return any;
   }
-  // Prefer smaller on weak, larger on strong
+
+  const preferSmaller =
+    capability.band === "low" ||
+    capability.band === "minimal" ||
+    capability.network.estimateScore < 50 ||
+    !benchmark?.sustainable;
+
   const sorted = [...pool].sort((a, b) =>
-    capability.score >= 60 ? b.maxWidth - a.maxWidth : a.maxWidth - b.maxWidth,
+    preferSmaller ? a.maxWidth - b.maxWidth : b.maxWidth - a.maxWidth,
   );
   return sorted[0]!;
 }

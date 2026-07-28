@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Encode Media Engine V2.2 quality ladder from archival 30fps masters.
+ * Encode Media Engine V2.2/V2.3 quality ladder from archival 30fps masters.
  * Default tiers: d1440, d1080 (desktop), m900 (mobile) — 30fps, g=1, H.264, WebP posters.
  *
  * Run: npm run media:ladder

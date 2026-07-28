@@ -53,7 +53,7 @@ export function HeroMedia({
       canvas,
       deviceClass,
       ladderUrl,
-      renderer,
+      renderer, // V2.3 auto: band classify + benchmark picks renderer/tier
       analytics: debug || process.env.NEXT_PUBLIC_MEDIA_ENGINE_ANALYTICS === "1",
       progressive: process.env.NEXT_PUBLIC_MEDIA_ENGINE_PROGRESSIVE === "1",
       onProgress,

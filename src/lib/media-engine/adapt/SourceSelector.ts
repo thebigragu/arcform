@@ -15,15 +15,12 @@ export function selectTier(
   manifest: MediaLadderManifest,
   capability: CapabilityScore,
   deviceClass: "desktop" | "mobile",
-  preferredTiers?: CapabilityScore["recommendedTier"],
 ): LadderTier {
   const pool = manifest.tiers.filter((t) => t.device === deviceClass);
-  const preference = preferredTiers?.length
-    ? preferredTiers
-    : capability.recommendedTier;
-  const ordered = preference
-    .map((id) => pool.find((t) => t.id === id))
-    .filter(Boolean) as LadderTier[];
+  const ordered =
+    capability.recommendedTier
+      .map((id) => pool.find((t) => t.id === id))
+      .filter(Boolean) as LadderTier[];
 
   if (ordered[0]) return ordered[0];
   if (pool.length === 0) {

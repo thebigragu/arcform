@@ -5,7 +5,6 @@ import {
   MediaEngine,
   type DeviceClass,
   type EngineStats,
-  type QualityTierId,
   type RendererPreference,
 } from "@/lib/media-engine";
 import { useMotionValueEvent, type MotionValue } from "framer-motion";
@@ -16,11 +15,6 @@ type HeroMediaProps = {
   scrubProgress: MotionValue<number>;
   renderer?: RendererPreference;
   ladderUrl?: string;
-  /** Override ladder preference (e.g. mobile `["m900"]`). */
-  preferredTiers?: QualityTierId[];
-  /** Override / cap present FPS (timeline stays 60fps). */
-  presentFps?: number;
-  maxPresentFps?: number;
   className?: string;
   debug?: boolean;
   onReady?: () => void;
@@ -36,9 +30,6 @@ export function HeroMedia({
   scrubProgress,
   renderer = "auto",
   ladderUrl,
-  preferredTiers,
-  presentFps,
-  maxPresentFps,
   className,
   debug = process.env.NEXT_PUBLIC_HERO_MEDIA_DEBUG === "1",
   onReady,
@@ -59,9 +50,6 @@ export function HeroMedia({
       canvas,
       deviceClass,
       ladderUrl,
-      preferredTiers,
-      presentFps,
-      maxPresentFps,
       renderer,
       analytics: debug || process.env.NEXT_PUBLIC_MEDIA_ENGINE_ANALYTICS === "1",
       progressive: process.env.NEXT_PUBLIC_MEDIA_ENGINE_PROGRESSIVE === "1",
@@ -100,7 +88,7 @@ export function HeroMedia({
     };
     // Intentionally once per deviceClass/renderer mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deviceClass, renderer, ladderUrl, preferredTiers, presentFps, maxPresentFps]);
+  }, [deviceClass, renderer, ladderUrl]);
 
   useMotionValueEvent(scrubProgress, "change", (p) => {
     engineRef.current?.setProgress(p);
@@ -128,7 +116,7 @@ export function HeroMedia({
           src={
             deviceClass === "mobile"
               ? "/videos/media-ladder/m900-poster.webp"
-              : "/videos/media-ladder/d2560-poster.webp"
+              : "/videos/media-ladder/d1920-poster.webp"
           }
           alt=""
           className="absolute inset-0 z-[2] h-full w-full object-cover"

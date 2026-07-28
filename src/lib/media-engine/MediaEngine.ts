@@ -93,11 +93,7 @@ export class MediaEngine {
   constructor(options: MediaEngineOptions) {
     this.options = options;
     this.capability = scoreCapabilities(options.deviceClass);
-    const maxPresent = options.maxPresentFps ?? 60;
-    const initialPresent =
-      options.presentFps ??
-      Math.min(this.capability.initialPresentFps, maxPresent);
-    this.presentClock = new PresentClock(initialPresent, maxPresent);
+    this.presentClock = new PresentClock(this.capability.initialPresentFps);
     this.buffer = new AdaptiveBufferGovernor(
       this.capability.initialBufferBudgetFrames,
     );
@@ -235,7 +231,6 @@ export class MediaEngine {
         this.manifest,
         this.capability,
         this.options.deviceClass,
-        this.options.preferredTiers,
       );
       src = this.tier.src;
       poster = this.tier.poster;

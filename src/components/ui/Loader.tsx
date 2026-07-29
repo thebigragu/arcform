@@ -7,9 +7,12 @@ import { useEffect } from "react";
 export function Loader({
   progress,
   onComplete,
+  preparing = false,
 }: {
   progress: number;
   onComplete: () => void;
+  /** Readiness-gate copy: "Preparing experience — N%" */
+  preparing?: boolean;
 }) {
   useEffect(() => {
     const reduced =
@@ -23,9 +26,13 @@ export function Loader({
 
   return (
     <motion.div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#08090b]"
+      className="pointer-events-auto fixed inset-0 z-[100] flex items-center justify-center bg-[#08090b]"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } }}
+      role="status"
+      aria-busy={preparing ? true : undefined}
+      aria-live="polite"
+      aria-label={preparing ? "Preparing experience" : "Loading"}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(26,91,104,0.12),transparent_55%)]" />
 
@@ -113,11 +120,17 @@ export function Loader({
 
           <div className="flex items-center justify-between">
             <span className="text-[10px] tracking-[0.35em] text-white/35 uppercase">
-              Loading
+              {preparing ? "Preparing experience" : "Loading"}
             </span>
             <span className="font-mono text-[10px] tracking-[0.2em] text-[#c4a574]/90">
-              {String(Math.round(progress)).padStart(3, "0")}
-              <span className="text-white/30">%</span>
+              {preparing
+                ? `${Math.round(progress)}%`
+                : (
+                    <>
+                      {String(Math.round(progress)).padStart(3, "0")}
+                      <span className="text-white/30">%</span>
+                    </>
+                  )}
             </span>
           </div>
 

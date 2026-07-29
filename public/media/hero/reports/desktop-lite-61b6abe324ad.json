@@ -1,0 +1,30 @@
+{
+  "tierId": "desktop-lite",
+  "device": "desktop",
+  "sourceKey": "desktop",
+  "sourceFps": 30,
+  "outputFps": 30,
+  "durationSec": 6,
+  "width": 1280,
+  "height": 710,
+  "maxBox": {
+    "w": 1280,
+    "h": 720
+  },
+  "frameCount": 180,
+  "totalBytes": 9000848,
+  "avgFrameBytes": 50005,
+  "maxFrameBytes": 60110,
+  "contentHash": "61b6abe324ad",
+  "urlPattern": "/media/hero/sequence/desktop-lite/61b6abe324ad/frame-%04d.webp",
+  "firstFrameUrl": "/media/hero/sequence/desktop-lite/61b6abe324ad/frame-0000.webp",
+  "lastFrameUrl": "/media/hero/sequence/desktop-lite/61b6abe324ad/frame-0179.webp",
+  "decodedCacheMax": 6,
+  "estimatedDecodedCacheMb": 20.8,
+  "prefetchAhead": 16,
+  "prefetchBehind": 8,
+  "maxActiveFetches": 6,
+  "webpQuality": 75,
+  "encodeDurationMs": 6916,
+  "ffmpegArgsNote": "-threads 2 -vf fps=30,scale=1280:710:flags=lanczos,format=yuv420p -c:v libwebp -quality 75 -compression_level 4"
+}

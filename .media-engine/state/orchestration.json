@@ -1,0 +1,112 @@
+{
+  "skillVersion": "1.0.0-rc.1",
+  "project": "C:\\Users\\jacob\\Desktop\\Website",
+  "mediaId": "hero",
+  "cliArgs": {
+    "id": "hero",
+    "resume": true,
+    "skipEncode": true,
+    "skipBuild": false,
+    "integrateHero": false,
+    "project": "C:\\Users\\jacob\\Desktop\\Website",
+    "fixtureFrom": "C:\\Users\\jacob\\Desktop\\Website\\public\\media\\hero"
+  },
+  "phases": {
+    "00-preflight": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:26.706Z",
+      "inputHash": "898e9ed6702bdea04c34efa0dbeac8da243912138c778509e934e72a47db2517",
+      "detail": {
+        "hasAppRouter": true,
+        "needsEncode": false,
+        "ffprobeOk": true
+      }
+    },
+    "01-inspect-source": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:26.715Z",
+      "inputHash": "9eca36a1384735a565e414accc74ad436edee29744316db86a0bc58719efa3ca",
+      "detail": {
+        "probePath": "C:\\Users\\jacob\\Desktop\\Website\\.media-engine\\state\\source-probe.json",
+        "fixture": true
+      }
+    },
+    "02-plan-profiles": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:26.716Z",
+      "inputHash": "6ff08cb3d817e6306f30e16d1ebf251111eec82ef791a4c701a0cf798afceade",
+      "detail": {
+        "source": "fixture",
+        "fixtureFrom": "C:\\Users\\jacob\\Desktop\\Website\\public\\media\\hero",
+        "tiers": [
+          "desktop-standard",
+          "desktop-lite",
+          "mobile"
+        ]
+      }
+    },
+    "03-generate-assets": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:26.969Z",
+      "inputHash": "f94a70830df32d03d0769487ffd7cff833286d5ca06bb9912d10a4fc676de0f7",
+      "detail": {
+        "mode": "fixture-copy",
+        "manifestPath": "C:\\Users\\jacob\\Desktop\\Website\\public\\media\\hero\\manifest.json",
+        "tierCount": 3
+      }
+    },
+    "04-install-runtime": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:26.985Z",
+      "inputHash": "68a525b8b31d353f29ef4f2f11c768a95c5140332fe1ea9c63914a650ea53062",
+      "detail": {
+        "runtimeDest": "C:\\Users\\jacob\\Desktop\\Website\\src\\media-engine",
+        "mediaComponentsDest": "C:\\Users\\jacob\\Desktop\\Website\\src\\components\\media",
+        "contextDest": "C:\\Users\\jacob\\Desktop\\Website\\src\\context",
+        "docsDest": "C:\\Users\\jacob\\Desktop\\Website\\.media-engine\\docs",
+        "addedScript": false,
+        "fileCounts": {
+          "runtime": 21,
+          "components": 6
+        }
+      }
+    },
+    "05-integrate-hero": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:26.986Z",
+      "inputHash": "cadd83c512272b031d74d8d2fc29f8091c1aee09e35873b04d50945f6bba7c38",
+      "detail": {
+        "written": [],
+        "skippedPage": true
+      }
+    },
+    "06-certify": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:27.120Z",
+      "inputHash": "a68e1e66ec377de49a76b8bd7936c9b40ba94676ac840ca564d7bc98bcf55006",
+      "detail": {
+        "certifyScript": "C:\\Users\\jacob\\.cursor\\skills\\media-engine\\scripts\\certify.cjs",
+        "exitCode": 0
+      }
+    },
+    "07-build": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:34.286Z",
+      "inputHash": "8f6c7de574448b1f6c59e89262d4f86e8f9a4f85b8e9593fa70d506ac58139ea",
+      "detail": {
+        "skipped": false,
+        "exitCode": 0
+      }
+    },
+    "08-report": {
+      "status": "ok",
+      "at": "2026-07-29T15:53:34.289Z",
+      "inputHash": "f29f6457dda233c2982d167c515c1bf411aea5232dfe7c41325e142da662ee39",
+      "detail": {
+        "reportPath": "C:\\Users\\jacob\\Desktop\\Website\\.media-engine\\state\\report.json",
+        "allOk": true
+      }
+    }
+  },
+  "updatedAt": "2026-07-29T15:53:34.289Z"
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import Lenis from "lenis";
+import { subscribeScrollLock } from "@/media-engine/MediaScrollLock";
 import { useEffect, type ReactNode } from "react";
 
 export function SmoothScroll({ children }: { children: ReactNode }) {
@@ -31,7 +32,13 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     };
     frame = requestAnimationFrame(raf);
 
+    const unsub = subscribeScrollLock((locked) => {
+      if (locked) lenis.stop();
+      else lenis.start();
+    });
+
     return () => {
+      unsub();
       cancelAnimationFrame(frame);
       document.documentElement.classList.remove("lenis");
       lenis.destroy();

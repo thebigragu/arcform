@@ -1,0 +1,30 @@
+{
+  "tierId": "mobile",
+  "device": "mobile",
+  "sourceKey": "mobile",
+  "sourceFps": 30,
+  "outputFps": 30,
+  "durationSec": 6,
+  "width": 532,
+  "height": 960,
+  "maxBox": {
+    "w": 540,
+    "h": 960
+  },
+  "frameCount": 180,
+  "totalBytes": 4837274,
+  "avgFrameBytes": 26874,
+  "maxFrameBytes": 31748,
+  "contentHash": "82a27ec8e1ab",
+  "urlPattern": "/media/hero/sequence/mobile/82a27ec8e1ab/frame-%04d.webp",
+  "firstFrameUrl": "/media/hero/sequence/mobile/82a27ec8e1ab/frame-0000.webp",
+  "lastFrameUrl": "/media/hero/sequence/mobile/82a27ec8e1ab/frame-0179.webp",
+  "decodedCacheMax": 6,
+  "estimatedDecodedCacheMb": 11.69,
+  "prefetchAhead": 12,
+  "prefetchBehind": 6,
+  "maxActiveFetches": 4,
+  "webpQuality": 75,
+  "encodeDurationMs": 5968,
+  "ffmpegArgsNote": "-threads 2 -vf fps=30,scale=532:960:flags=lanczos,format=yuv420p -c:v libwebp -quality 75 -compression_level 4"
+}

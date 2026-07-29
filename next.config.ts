@@ -4,11 +4,46 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/media/hero/sequence/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/media/hero/posters/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/media/hero/manifest.json",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=60, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
         source: "/videos/media/:id/scrub/:file*",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+          {
+            key: "Content-Type",
+            value: "video/mp4",
+          },
+          {
+            key: "Accept-Ranges",
+            value: "bytes",
           },
         ],
       },
@@ -18,6 +53,14 @@ const nextConfig: NextConfig = {
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+          {
+            key: "Content-Type",
+            value: "video/mp4",
+          },
+          {
+            key: "Accept-Ranges",
+            value: "bytes",
           },
         ],
       },

@@ -2,51 +2,43 @@
 
 import { useHeroPreloadOptional } from "@/context/HeroPreloadContext";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
-import {
-  HERO_MEDIA_ID,
-  HERO_POSTER_FALLBACK,
-  heroPosterPath,
-  loadHeroDefaults,
-} from "@/lib/media-engine/heroDefaults";
-import { useEffect, useState } from "react";
+import { coldStartTelemetry, HERO_POSTER_FALLBACK } from "@/media-engine";
+import { useEffect } from "react";
 
 /**
- * Skill-aligned poster-first preload for the site hero (mediaId=hero).
+ * Gate 1 poster warm — single high-priority request for the form-factor poster.
+ * URL must match MediaView poster src byte-for-byte.
  */
 export function HeroPosterPreload() {
   const preload = useHeroPreloadOptional();
   const mobile = useHeroMobileVideo();
-  const [posterSrc, setPosterSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadHeroDefaults().then((defaults) => {
-      if (mobile === null) return;
-      setPosterSrc(heroPosterPath(mobile ? "mobile" : "desktop", defaults));
-    });
-  }, [mobile]);
-
-  useEffect(() => {
-    if (!preload?.heroRequired || mobile === null || !posterSrc) return;
+    if (!preload?.heroRequired || mobile === null) return;
+    const posterSrc = mobile
+      ? HERO_POSTER_FALLBACK.mobile
+      : HERO_POSTER_FALLBACK.desktop;
+    coldStartTelemetry.posterHintUrl = posterSrc;
+    coldStartTelemetry.frame0HintUrl = "none";
+    coldStartTelemetry.notePosterRuntimeStart(posterSrc);
 
     const img = new Image();
     img.fetchPriority = "high";
-    img.decoding = "sync";
-    img.onload = () => preload.signalPosterReady();
-    img.onerror = () => preload.signalPosterReady();
+    img.decoding = "async";
+    img.onload = () => {
+      coldStartTelemetry.notePosterRuntimeEnd();
+      preload.signalPosterReady();
+    };
+    img.onerror = () => {
+      coldStartTelemetry.notePosterRuntimeEnd();
+      preload.signalPosterReady();
+    };
     img.src = posterSrc;
-
     return () => {
       img.onload = null;
       img.onerror = null;
     };
-  }, [preload, mobile, posterSrc]);
+  }, [preload, mobile]);
 
   return null;
 }
-
-export {
-  HERO_MEDIA_ID,
-  HERO_POSTER_FALLBACK,
-  heroPosterPath,
-  loadHeroDefaults,
-};

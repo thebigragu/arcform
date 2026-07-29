@@ -1,8 +1,16 @@
-# Media Engine — Operator Guide (Standard 2.3)
+# Media Engine — Operator Guide
 
-Reusable scroll-scrub media engine for luxury sites. Core: `src/lib/media-engine/`. React shell: `src/components/media/HeroMedia.tsx`.
+**Gate 1 production (Website Sequence Scrub):** see [gate1-production.md](./gate1-production.md).
 
-Agency handbook: Media Engine Skill V2.3 (Adaptive Runtime Intelligence).
+Live runtime: `src/media-engine/` via `MediaView`. Legacy multi-renderer notes below are historical.
+
+---
+
+# Legacy — Media Engine V2.3 notes
+
+Reusable scroll-scrub media engine for luxury sites. Core (legacy): `src/lib/media-engine/`.
+
+Agency handbook: Media Engine Skill (do not replace until Gate 2 + packaging).
 
 ## Assets
 

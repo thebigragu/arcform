@@ -1,0 +1,9 @@
+{
+  "source": "fixture",
+  "fixtureFrom": "C:\\Users\\jacob\\Desktop\\Website\\public\\media\\hero",
+  "tiers": [
+    "desktop-standard",
+    "desktop-lite",
+    "mobile"
+  ]
+}

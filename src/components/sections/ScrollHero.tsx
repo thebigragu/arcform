@@ -8,7 +8,7 @@ import { MediaView } from "@/components/media/MediaView";
 import {
   HERO_MEDIA_ID,
   HERO_POSTER_FALLBACK,
-} from "@/lib/media-engine/heroDefaults";
+} from "@/media-engine";
 import { useHeroPreload } from "@/context/HeroPreloadContext";
 import { useHeroMobileVideo } from "@/hooks/useIsMobile";
 import {
@@ -68,6 +68,21 @@ function useContactMotion(uiProgress: MotionValue<number>, isMobile: boolean) {
 }
 
 function HeroLogo() {
+  const [mediaDebug, setMediaDebug] = useState(false);
+
+  useEffect(() => {
+    try {
+      setMediaDebug(
+        new URLSearchParams(window.location.search).get("mediaDebug") === "1",
+      );
+    } catch {
+      setMediaDebug(false);
+    }
+  }, []);
+
+  // Debug overlay sits top-left — hide brand mark so stats stay readable
+  if (mediaDebug) return null;
+
   return (
     <div className="pointer-events-auto fixed top-8 left-7 z-50 sm:top-8 sm:left-8 md:top-14 md:left-14">
       <div className="relative inline-flex items-center justify-center">
@@ -413,8 +428,14 @@ function ScrollHeroMobile() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { signalEngineReady, signalPosterReady, reportProgress, reportError } =
-    useHeroPreload();
+  const {
+    signalEngineReady,
+    signalPosterReady,
+    signalCompressedReady,
+    reportProgress,
+    reportError,
+    readinessGateEnabled,
+  } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -439,9 +460,12 @@ function ScrollHeroMobile() {
               posterFallback={HERO_POSTER_FALLBACK}
               deviceClass="mobile"
               scrubProgress={frameProgress}
+              rawScrollProgress={scrollYProgress}
               onPosterLoad={signalPosterReady}
               onReady={signalEngineReady}
-              onProgress={reportProgress}
+              onProgress={readinessGateEnabled ? undefined : reportProgress}
+              onReadinessProgress={reportProgress}
+              onReadinessRelease={() => signalCompressedReady()}
               onFatal={(e) => reportError(e.message)}
             />
 
@@ -469,8 +493,14 @@ function ScrollHeroDesktop() {
   const [contactOpen, setContactOpen] = useState(false);
   const closeContact = useCallback(() => setContactOpen(false), []);
   const openContact = useCallback(() => setContactOpen(true), []);
-  const { signalEngineReady, signalPosterReady, reportProgress, reportError } =
-    useHeroPreload();
+  const {
+    signalEngineReady,
+    signalPosterReady,
+    signalCompressedReady,
+    reportProgress,
+    reportError,
+    readinessGateEnabled,
+  } = useHeroPreload();
 
   const { scrollYProgress } = useScroll({
     target: scrubRef,
@@ -557,9 +587,12 @@ function ScrollHeroDesktop() {
               posterFallback={HERO_POSTER_FALLBACK}
               deviceClass="desktop"
               scrubProgress={frameProgress}
+              rawScrollProgress={scrollYProgress}
               onPosterLoad={signalPosterReady}
               onReady={signalEngineReady}
-              onProgress={reportProgress}
+              onProgress={readinessGateEnabled ? undefined : reportProgress}
+              onReadinessProgress={reportProgress}
+              onReadinessRelease={() => signalCompressedReady()}
               onFatal={(e) => reportError(e.message)}
             />
             <HeroSideCopy progress={uiProgress} />

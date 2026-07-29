@@ -20,8 +20,13 @@
     "videos": "npm run videos:encode",
     "media:ladder": "node scripts/encode-media-ladder.cjs",
     "media:ingest": "node scripts/media-ingest/index.cjs",
-    "media:certify": "node scripts/media-certify/index.cjs",
-    "media:certify:runtime": "node scripts/media-certify-runtime.cjs"
+    "media:certify": "node scripts/media-engine/certify.cjs --project . --id hero",
+    "media:certify:runtime": "node scripts/media-certify-runtime.cjs",
+    "media:v1:probe": "node scripts/media-v1/probe.cjs",
+    "media:v1:posters": "node scripts/media-v1/encode-posters.cjs",
+    "media:v1:encode": "node scripts/media-v1/encode-tier.cjs",
+    "media:v1:manifest": "node scripts/media-v1/write-manifest.cjs",
+    "media:v1:certify": "node scripts/media-v1/certify.cjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

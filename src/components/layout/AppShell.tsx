@@ -6,19 +6,40 @@ import {
   HeroPreloadProvider,
   useHeroPreloadOptional,
 } from "@/context/HeroPreloadContext";
+import {
+  lockDocumentScroll,
+  unlockDocumentScroll,
+} from "@/media-engine/MediaScrollLock";
 import { AnimatePresence } from "framer-motion";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 function AppShellInner({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const complete = useCallback(() => setLoading(false), []);
   const preload = useHeroPreloadOptional();
+  const scrollLockedRef = useRef(false);
 
+  const gate = Boolean(preload?.readinessGateEnabled);
   const progress = preload
     ? Math.round((preload.ready ? 1 : preload.progress) * 100)
     : 100;
   const ready = preload ? preload.ready : true;
   const failed = Boolean(preload?.error);
+
+  // Lock document scroll while readiness gate holds the loader
+  useEffect(() => {
+    if (!gate) return;
+    if (loading && !scrollLockedRef.current) {
+      lockDocumentScroll({ reason: "readiness-gate-active" });
+      scrollLockedRef.current = true;
+    }
+  }, [gate, loading]);
+
+  const unlockAfterOverlay = useCallback((reason: string) => {
+    if (!scrollLockedRef.current) return;
+    unlockDocumentScroll(reason);
+    scrollLockedRef.current = false;
+  }, []);
 
   useEffect(() => {
     if (!ready && !failed) return;
@@ -26,16 +47,46 @@ function AppShellInner({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(t);
   }, [ready, failed, complete]);
 
-  // Hard failsafe — never leave the site invisible
+  // Baseline: hard failsafe 800ms. Readiness gate: allow full gate duration + buffer.
   useEffect(() => {
-    const t = window.setTimeout(complete, 60000);
+    const ms = gate ? 12_000 : 800;
+    const t = window.setTimeout(complete, ms);
     return () => window.clearTimeout(t);
-  }, [complete]);
+  }, [complete, gate]);
+
+  // Always clean up lock on unmount / route leave
+  useEffect(() => {
+    return () => {
+      if (scrollLockedRef.current) {
+        unlockDocumentScroll("unmount");
+        scrollLockedRef.current = false;
+      }
+    };
+  }, []);
+
+  // Fallback unlock if exit animation callback is skipped
+  useEffect(() => {
+    if (!gate || loading || !scrollLockedRef.current) return;
+    const t = window.setTimeout(() => {
+      unlockAfterOverlay("loader-hidden-fallback");
+    }, 750);
+    return () => window.clearTimeout(t);
+  }, [gate, loading, unlockAfterOverlay]);
 
   return (
     <>
-      <AnimatePresence>
-        {loading && <Loader progress={progress} onComplete={complete} />}
+      <AnimatePresence
+        onExitComplete={() => {
+          if (gate) unlockAfterOverlay("loader-exit-complete");
+        }}
+      >
+        {loading && (
+          <Loader
+            progress={progress}
+            onComplete={complete}
+            preparing={gate}
+          />
+        )}
       </AnimatePresence>
       {/*
         Keep children painted under the opaque loader. opacity-0 prevents mobile
@@ -44,6 +95,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <div
         className={loading ? "pointer-events-none" : undefined}
         aria-hidden={loading || undefined}
+        aria-busy={gate && loading ? true : undefined}
       >
         <HeroPosterPreload />
         {children}

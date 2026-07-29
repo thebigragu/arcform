@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "mediaId": "hero",
+  "pipelineVersion": "1.0.0-rc.1-website-gate1",
+  "createdAt": "2026-07-28T22:25:23.846Z",
+  "sources": {
+    "desktop": {
+      "path": "public/videos/hero-master-desktop.mp4",
+      "contentHash": "960d8cef6ace4aab",
+      "width": 3838,
+      "height": 2134,
+      "durationSec": 6,
+      "fps": {
+        "num": 30,
+        "den": 1,
+        "value": 30
+      },
+      "avgFps": {
+        "num": 30,
+        "den": 1,
+        "value": 30
+      },
+      "displayAspectRatio": "1919:1067",
+      "codec": "hevc"
+    },
+    "mobile": {
+      "path": "public/videos/hero-master-mobile.mp4",
+      "contentHash": "0263739802104a3d",
+      "width": 2134,
+      "height": 3838,
+      "durationSec": 6,
+      "fps": {
+        "num": 30,
+        "den": 1,
+        "value": 30
+      },
+      "avgFps": {
+        "num": 30,
+        "den": 1,
+        "value": 30
+      },
+      "displayAspectRatio": "1067:1919",
+      "codec": "hevc"
+    }
+  },
+  "outputFpsRule": "min(sourceFPS, 30)",
+  "posters": {
+    "desktop": "/media/hero/posters/desktop-c0c923dbfafe.webp",
+    "mobile": "/media/hero/posters/mobile-68df5884daf9.webp"
+  },
+  "posterMeta": {
+    "desktop": {
+      "device": "desktop",
+      "width": 1920,
+      "height": 1066,
+      "bytes": 82246,
+      "contentHash": "c0c923dbfafe",
+      "src": "/media/hero/posters/desktop-c0c923dbfafe.webp"
+    },
+    "mobile": {
+      "device": "mobile",
+      "width": 532,
+      "height": 960,
+      "bytes": 26274,
+      "contentHash": "68df5884daf9",
+      "src": "/media/hero/posters/mobile-68df5884daf9.webp"
+    },
+    "at": "2026-07-28T22:24:46.412Z"
+  },
+  "policy": {
+    "decodedCacheMaxDefault": 6,
+    "startupFramesMax": 3,
+    "allowDesktopHigh": false
+  },
+  "tiers": [
+    {
+      "id": "desktop-standard",
+      "device": "desktop",
+      "width": 1920,
+      "height": 1066,
+      "outputFps": 30,
+      "sourceFps": 30,
+      "frameCount": 180,
+      "durationSec": 6,
+      "totalBytes": 15284678,
+      "avgFrameBytes": 84915,
+      "maxFrameBytes": 104446,
+      "contentHash": "86de1f4e51f7",
+      "urlPattern": "/media/hero/sequence/desktop-standard/86de1f4e51f7/frame-%04d.webp",
+      "firstFrameUrl": "/media/hero/sequence/desktop-standard/86de1f4e51f7/frame-0000.webp",
+      "lastFrameUrl": "/media/hero/sequence/desktop-standard/86de1f4e51f7/frame-0179.webp",
+      "decodedCacheMax": 8,
+      "estimatedDecodedCacheMb": 46.85,
+      "prefetchAhead": 18,
+      "prefetchBehind": 8,
+      "maxActiveFetches": 6,
+      "recommended": true
+    },
+    {
+      "id": "desktop-lite",
+      "device": "desktop",
+      "width": 1280,
+      "height": 710,
+      "outputFps": 30,
+      "sourceFps": 30,
+      "frameCount": 180,
+      "durationSec": 6,
+      "totalBytes": 9000848,
+      "avgFrameBytes": 50005,
+      "maxFrameBytes": 60110,
+      "contentHash": "61b6abe324ad",
+      "urlPattern": "/media/hero/sequence/desktop-lite/61b6abe324ad/frame-%04d.webp",
+      "firstFrameUrl": "/media/hero/sequence/desktop-lite/61b6abe324ad/frame-0000.webp",
+      "lastFrameUrl": "/media/hero/sequence/desktop-lite/61b6abe324ad/frame-0179.webp",
+      "decodedCacheMax": 6,
+      "estimatedDecodedCacheMb": 20.8,
+      "prefetchAhead": 16,
+      "prefetchBehind": 8,
+      "maxActiveFetches": 6,
+      "recommended": true
+    },
+    {
+      "id": "mobile",
+      "device": "mobile",
+      "width": 532,
+      "height": 960,
+      "outputFps": 30,
+      "sourceFps": 30,
+      "frameCount": 180,
+      "durationSec": 6,
+      "totalBytes": 4837274,
+      "avgFrameBytes": 26874,
+      "maxFrameBytes": 31748,
+      "contentHash": "82a27ec8e1ab",
+      "urlPattern": "/media/hero/sequence/mobile/82a27ec8e1ab/frame-%04d.webp",
+      "firstFrameUrl": "/media/hero/sequence/mobile/82a27ec8e1ab/frame-0000.webp",
+      "lastFrameUrl": "/media/hero/sequence/mobile/82a27ec8e1ab/frame-0179.webp",
+      "decodedCacheMax": 6,
+      "estimatedDecodedCacheMb": 11.69,
+      "prefetchAhead": 12,
+      "prefetchBehind": 6,
+      "maxActiveFetches": 4,
+      "recommended": true
+    }
+  ],
+  "fixtureOrigin": {
+    "fixtureDir": "C:\\Users\\jacob\\Desktop\\Website\\public\\media\\hero",
+    "originalMediaId": "hero",
+    "copiedAt": "2026-07-29T15:53:26.969Z",
+    "note": "Assets copied verbatim from fixture; not re-encoded."
+  }
+}

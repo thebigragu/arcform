@@ -1,0 +1,161 @@
+{
+  "project": "C:\\Users\\jacob\\Desktop\\Website",
+  "mediaId": "hero",
+  "pass": true,
+  "checks": [
+    {
+      "status": "ok",
+      "message": "schemaVersion=1"
+    },
+    {
+      "status": "ok",
+      "message": "mediaId=hero"
+    },
+    {
+      "status": "ok",
+      "message": "allowDesktopHigh=false"
+    },
+    {
+      "status": "ok",
+      "message": "no desktop-high in manifest"
+    },
+    {
+      "status": "ok",
+      "message": "desktop-standard 1920x1066 fps=30 frames=180 cache=8"
+    },
+    {
+      "status": "ok",
+      "message": "desktop-lite 1280x710 fps=30 frames=180 cache=6"
+    },
+    {
+      "status": "ok",
+      "message": "mobile 532x960 fps=30 frames=180 cache=6"
+    },
+    {
+      "status": "ok",
+      "message": "poster desktop"
+    },
+    {
+      "status": "ok",
+      "message": "poster mobile"
+    },
+    {
+      "status": "ok",
+      "message": "no banned WebCodecs/HTML-video-scrub tokens in installed media source"
+    },
+    {
+      "status": "ok",
+      "message": "MediaColdRunway absent from installed src/media-engine"
+    },
+    {
+      "status": "ok",
+      "message": "ColdRunwayWarmer absent from installed src/media-engine"
+    },
+    {
+      "status": "ok",
+      "message": "production readiness default constant present"
+    },
+    {
+      "status": "ok",
+      "message": "production readiness target constant present"
+    },
+    {
+      "status": "ok",
+      "message": "threshold-ready-90 reason present"
+    },
+    {
+      "status": "ok",
+      "message": "threshold-ready-95 reason present"
+    },
+    {
+      "status": "ok",
+      "message": "threshold-ready-100 reason present"
+    },
+    {
+      "status": "ok",
+      "message": "anchor coverage helper present"
+    },
+    {
+      "status": "ok",
+      "message": "evaluateThresholdPredicate present"
+    },
+    {
+      "status": "ok",
+      "message": "minUniqueFramesForTarget present"
+    },
+    {
+      "status": "ok",
+      "message": "ordinary visits enable readiness automatically"
+    },
+    {
+      "status": "ok",
+      "message": "readiness timeouts 8000/7000/6000ms preserved"
+    },
+    {
+      "status": "ok",
+      "message": "readiness gate compressed-fetch-only"
+    },
+    {
+      "status": "ok",
+      "message": "single-winner commitRelease present"
+    },
+    {
+      "status": "ok",
+      "message": "atomic releaseClaimed present"
+    },
+    {
+      "status": "ok",
+      "message": "DESKTOP_LITE_MAX_MEMORY_GB present"
+    },
+    {
+      "status": "ok",
+      "message": "DESKTOP_LITE_MAX_LOGICAL_CORES present"
+    },
+    {
+      "status": "ok",
+      "message": "DESKTOP_LITE_FALLBACK_MAX_CORES_WHEN_MEM_UNKNOWN present"
+    },
+    {
+      "status": "ok",
+      "message": "hardwareConcurrency present"
+    },
+    {
+      "status": "ok",
+      "message": "runtime desktop-standard cache=8"
+    },
+    {
+      "status": "ok",
+      "message": "runtime cache limits 6/6 preserved"
+    },
+    {
+      "status": "ok",
+      "message": "debug tier override is debug-only"
+    },
+    {
+      "status": "ok",
+      "message": "tests\\policy\\test-tier-policy.cjs pass"
+    },
+    {
+      "status": "ok",
+      "message": "tests\\readiness\\test-readiness-threshold.cjs pass"
+    },
+    {
+      "status": "ok",
+      "message": "canvas not opacity-hidden behind poster"
+    },
+    {
+      "status": "ok",
+      "message": "MediaPreloadContext uses readiness gate default"
+    },
+    {
+      "status": "ok",
+      "message": "AppShell engages readiness scroll lock"
+    },
+    {
+      "status": "ok",
+      "message": "Lenis stopped during readiness scroll lock"
+    }
+  ],
+  "errors": [],
+  "generatedAt": "2026-07-29T15:53:27.112Z"
+}

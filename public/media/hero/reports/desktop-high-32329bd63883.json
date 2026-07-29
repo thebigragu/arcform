@@ -1,0 +1,29 @@
+{
+  "tierId": "desktop-high",
+  "device": "desktop",
+  "sourceKey": "desktop",
+  "sourceFps": 30,
+  "outputFps": 30,
+  "durationSec": 6,
+  "width": 2560,
+  "height": 1422,
+  "maxBox": {
+    "w": 2560,
+    "h": 1440
+  },
+  "frameCount": 180,
+  "totalBytes": 24076126,
+  "avgFrameBytes": 133756,
+  "maxFrameBytes": 166206,
+  "contentHash": "32329bd63883",
+  "urlPattern": "/media/hero/sequence/desktop-high/32329bd63883/frame-%04d.webp",
+  "firstFrameUrl": "/media/hero/sequence/desktop-high/32329bd63883/frame-0000.webp",
+  "lastFrameUrl": "/media/hero/sequence/desktop-high/32329bd63883/frame-0179.webp",
+  "decodedCacheMax": 6,
+  "estimatedDecodedCacheMb": 83.32,
+  "prefetchAhead": 20,
+  "prefetchBehind": 8,
+  "maxActiveFetches": 6,
+  "webpQuality": 78,
+  "ffmpegArgsNote": "-threads 2 -vf fps=30,scale=2560:1422:flags=lanczos,format=yuv420p -c:v libwebp -quality 78"
+}

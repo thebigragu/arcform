@@ -92,9 +92,8 @@ export function ClientServiceTermsContent() {
         <p className="text-fg-muted leading-relaxed">If the next renewal has already been processed before Ragusto receives the cancellation request, cancellation takes effect at the end of that newly paid billing period.</p>
         <p className="text-fg-muted leading-relaxed">Payments already processed are non-refundable and not prorated except where required by law or expressly agreed by Ragusto in writing. Immediate deactivation at the Customer&apos;s request does not create a refund for the unused portion of a paid period.</p>
         <p className="text-fg-muted leading-relaxed">
-          Authorized cancellation methods are the Stripe Customer Portal where cancellation is enabled, email to 
-          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>
-          , or another method expressly designated by Ragusto. Email cancellation requests are measured in Eastern Time. Ragusto will send or make available a cancellation confirmation; if the Customer does not receive confirmation within two business days, the Customer should follow up, but proof of timely receipt through an authorized method remains controlling.
+          Authorized cancellation methods are the Stripe Customer Portal where cancellation is enabled, email to{" "}
+          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>, or another method expressly designated by Ragusto. Email cancellation requests are measured in Eastern Time. Ragusto will send or make available a cancellation confirmation; if the Customer does not receive confirmation within two business days, the Customer should follow up, but proof of timely receipt through an authorized method remains controlling.
         </p>
       </section>
       <section className="space-y-4">
@@ -281,9 +280,8 @@ export function ClientServiceTermsContent() {
       <section className="space-y-4">
         <h2 className="legal-section-title">29. Notices</h2>
         <p className="text-fg-muted leading-relaxed">
-          Contractual notices to the Customer may be sent to the email address in the Customer&apos;s Stripe account, invoice, or most recent correspondence. Notices to Ragusto may be sent to 
-          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>
-          . Cancellation and domain-transfer requests must clearly identify the Customer, applicable Service, and requested effective date.
+          Contractual notices to the Customer may be sent to the email address in the Customer&apos;s Stripe account, invoice, or most recent correspondence. Notices to Ragusto may be sent to{" "}
+          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>. Cancellation and domain-transfer requests must clearly identify the Customer, applicable Service, and requested effective date.
         </p>
         <p className="text-fg-muted leading-relaxed">Email notice is considered received on the next business day after sending unless the sender receives a delivery-failure notice. A party must keep its contact information current.</p>
       </section>
@@ -317,6 +315,7 @@ export function ClientServiceTermsContent() {
         <p className="text-fg-muted leading-relaxed">The Customer is responsible for security of Customer-controlled accounts, devices, users, credentials, data exports, configurations, and third-party services. The Customer must promptly revoke access for departed personnel, use multi-factor authentication where available, and notify Ragusto of suspected compromise.</p>
         <p className="text-fg-muted leading-relaxed">Unless Ragusto expressly approves otherwise in a separate written data-protection agreement, the Services are not designed for medical records, government identification numbers, full payment-card data, financial-account credentials, precise biometrics, information about minors, or other highly sensitive or regulated data.</p>
       </section>
+      {" "}
       <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
         ← Back home
       </Link>

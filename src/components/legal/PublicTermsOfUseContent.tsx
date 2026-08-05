@@ -21,9 +21,9 @@ export function PublicTermsOfUseContent() {
       <section className="space-y-4">
         <h2 className="legal-section-title">1. Operator and Acceptance</h2>
         <p className="text-fg-muted leading-relaxed">
-          These Terms of Use ("Terms") govern your access to and use of 
-          <a className={linkClass} href={SITE.url}>https://ragusto.com</a>
-           and any public pages, materials, forms, or features made available through it (the "Site"). The Site is operated by Ragusto ("we," "us," or "our").
+          These Terms of Use ("Terms") govern your access to and use of{" "}
+          <a className={linkClass} href={SITE.url}>https://ragusto.com</a>{" "}
+          and any public pages, materials, forms, or features made available through it (the "Site"). The Site is operated by Ragusto ("we," "us," or "our").
         </p>
         <p className="text-fg-muted leading-relaxed">By accessing or using the Site, you agree to these Terms. If you do not agree, do not use the Site. Browsing the Site or submitting a general inquiry does not by itself create a paid subscription, minimum commitment, or payment obligation. Those obligations arise only when a customer affirmatively accepts the applicable customer agreement and completes checkout or pays an invoice that links to or expressly references that agreement.</p>
       </section>
@@ -126,17 +126,18 @@ export function PublicTermsOfUseContent() {
       <section className="space-y-4">
         <h2 className="legal-section-title">19. Contact</h2>
         <p className="text-fg-muted leading-relaxed">
-          Questions about these Terms may be sent to Ragusto at 
-          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>
-          .
+          Questions about these Terms may be sent to Ragusto at{" "}
+          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>.
         </p>
+        {"\n"}
         <p className="text-fg-muted leading-relaxed">
-          Website: 
+          Website:{" "}
           <a className={linkClass} href={SITE.url}>https://ragusto.com</a>
-             |   Email: 
+          {"   |   "}Email:{" "}
           <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>
         </p>
       </section>
+      {" "}
       <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
         ← Back home
       </Link>

@@ -12,6 +12,8 @@ export function PrivacyPolicyContent() {
           How Ragusto collects, uses, protects, and discloses personal information
         </p>
         <p className="text-sm text-fg-muted">Effective date: August 5, 2026</p>
+        <p className="text-sm text-fg-muted">Version: 1.4</p>
+        <p className="text-sm text-fg-muted">Operator: Ragusto</p>
         <p className="text-xs tracking-[0.3em] text-fg-muted uppercase">RAGUSTO</p>
       </header>
 
@@ -31,7 +33,7 @@ export function PrivacyPolicyContent() {
         </p>
         <p className="text-fg-muted leading-relaxed">
           Questions about this Privacy Policy may be directed to Ragusto&apos;s Privacy Officer at{" "}
-          <a className={linkClass} href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>.
         </p>
       </section>
 
@@ -39,7 +41,7 @@ export function PrivacyPolicyContent() {
         <h2 className="legal-section-title">2. Scope of This Policy</h2>
         <p className="text-fg-muted leading-relaxed">
           This Policy applies when you visit{" "}
-          <a className={linkClass} href={SITE.url}>{SITE.url}</a>, contact Ragusto, request a
+          <a className={linkClass} href={SITE.url}>https://ragusto.com</a>, contact Ragusto, request a
           consultation or preview, receive or purchase services, use a Ragusto billing or support
           process, or otherwise interact with Ragusto.
         </p>
@@ -336,7 +338,8 @@ export function PrivacyPolicyContent() {
           You may make a written request to access personal information under Ragusto&apos;s control,
           learn how it has been used or disclosed, or request correction of inaccurate information
           by emailing{" "}
-          <a className={linkClass} href={`mailto:${SITE.email}`}>{SITE.email}</a>. Ragusto may need
+          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>.{" "}
+          Ragusto may need
           to verify identity before responding.
         </p>
         <p className="text-fg-muted leading-relaxed">
@@ -390,7 +393,7 @@ export function PrivacyPolicyContent() {
         <p className="text-fg-muted leading-relaxed">
           Privacy questions, access requests, correction requests, and complaints may be sent to
           Ragusto&apos;s Privacy Officer at{" "}
-          <a className={linkClass} href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+          <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>.
         </p>
         <p className="text-fg-muted leading-relaxed">
           Ragusto will investigate privacy complaints and respond within a reasonable period. You
@@ -398,13 +401,15 @@ export function PrivacyPolicyContent() {
         </p>
       </section>
 
+      {"\n"}
       <footer className="border-t border-border pt-6 text-xs text-fg-muted">
         Website:{" "}
-        <a className={linkClass} href={SITE.url}>{SITE.url}</a>
+        <a className={linkClass} href={SITE.url}>https://ragusto.com</a>
         {"   |   "}Email:{" "}
-        <a className={linkClass} href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>
       </footer>
 
+      {" "}
       <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
         ← Back home
       </Link>

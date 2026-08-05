@@ -28,6 +28,8 @@ const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
   weight: ["500", "600", "700", "800"],
+  // Size-adjusted fallback metrics can clip Syne descenders (g, y, p).
+  adjustFontFallback: false,
 });
 
 const cormorant = Cormorant_Garamond({

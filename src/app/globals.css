@@ -78,6 +78,45 @@ body {
   font-family: var(--font-syne), var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/*
+  Legal headings use Geist (not Syne). Syne's geometric descenders need
+  line-height ≥ ~1.21 of the font box and still read as clipped at display
+  sizes; Geist keeps hierarchy readable on long policy pages.
+*/
+.legal-page-title,
+.legal-section-title,
+.legal-subsection-title {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 600;
+  overflow: visible;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+}
+
+.legal-page-title {
+  display: block;
+  font-size: clamp(2.25rem, 4vw, 3rem);
+  line-height: 1.5;
+  padding-bottom: 0.2em;
+}
+
+.legal-section-title {
+  font-size: 1.375rem;
+  line-height: 1.5;
+  padding-bottom: 0.15em;
+}
+
+.legal-subsection-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.5;
+  padding-bottom: 0.12em;
+}
+
+.legal-page-header {
+  overflow: visible;
+}
+
 .font-serif {
   font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
 }

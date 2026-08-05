@@ -2,7 +2,14 @@ import { SITE } from "@/lib/seo";
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/contact", "/privacy"];
+  const routes = [
+    "",
+    "/contact",
+    "/privacy",
+    "/privacy-policy",
+    "/client-service-terms",
+    "/public-terms-of-use",
+  ];
   return routes.map((route) => ({
     url: `${SITE.url}${route}`,
     lastModified: new Date(),

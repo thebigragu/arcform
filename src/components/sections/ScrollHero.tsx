@@ -1,5 +1,6 @@
 "use client";
 
+import { HomeLegalLinks } from "@/components/layout/HomeLegalLinks";
 import { Button } from "@/components/ui/Button";
 import { ContactModal } from "@/components/ui/ContactModal";
 import { Magnetic } from "@/components/ui/Magnetic";
@@ -453,7 +454,7 @@ function ScrollHeroMobile() {
         ref={scrubRef}
         className="relative h-[1000vh] bg-transparent md:h-[2000vh]"
       >
-        <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
+        <div className="relative sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b]">
             <MediaView
               mediaId={HERO_MEDIA_ID}
@@ -480,6 +481,7 @@ function ScrollHeroMobile() {
             contactOpacity={contactOpacity}
             onContactOpen={openContact}
           />
+          <HomeLegalLinks opacity={contactOpacity} />
         </div>
       </section>
       <ContactModal open={contactOpen} onClose={closeContact} />
@@ -576,7 +578,7 @@ function ScrollHeroDesktop() {
         ref={scrubRef}
         className="relative h-[1200vh] bg-transparent md:h-[2000vh]"
       >
-        <div className="sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
+        <div className="relative sticky top-0 z-20 h-[100dvh] w-full overflow-hidden bg-transparent">
           <motion.div
             ref={heroFrameRef}
             className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#08090b] will-change-transform"
@@ -605,6 +607,7 @@ function ScrollHeroDesktop() {
             contactOpacity={contactOpacity}
             onContactOpen={openContact}
           />
+          <HomeLegalLinks opacity={contactOpacity} />
         </div>
       </section>
       <ContactModal open={contactOpen} onClose={closeContact} />

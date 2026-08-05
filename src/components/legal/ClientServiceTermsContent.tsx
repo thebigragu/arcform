@@ -315,10 +315,12 @@ export function ClientServiceTermsContent() {
         <p className="text-fg-muted leading-relaxed">The Customer is responsible for security of Customer-controlled accounts, devices, users, credentials, data exports, configurations, and third-party services. The Customer must promptly revoke access for departed personnel, use multi-factor authentication where available, and notify Ragusto of suspected compromise.</p>
         <p className="text-fg-muted leading-relaxed">Unless Ragusto expressly approves otherwise in a separate written data-protection agreement, the Services are not designed for medical records, government identification numbers, full payment-card data, financial-account credentials, precise biometrics, information about minors, or other highly sensitive or regulated data.</p>
       </section>
-      {" "}
-      <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
-        ← Back home
-      </Link>
+      {"\n"}
+      <nav aria-label="Page navigation">
+        <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
+          ← Back home
+        </Link>
+      </nav>
     </div>
   );
 }

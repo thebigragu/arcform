@@ -137,10 +137,12 @@ export function PublicTermsOfUseContent() {
           <a className={linkClass} href={`mailto:${SITE.email}`}>jacob@ragusto.com</a>
         </p>
       </section>
-      {" "}
-      <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
-        ← Back home
-      </Link>
+      {"\n"}
+      <nav aria-label="Page navigation">
+        <Link href="/" className="inline-block text-sm text-fg-muted hover:text-fg">
+          ← Back home
+        </Link>
+      </nav>
     </div>
   );
 }

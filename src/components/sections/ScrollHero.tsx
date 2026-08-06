@@ -1,6 +1,6 @@
 "use client";
 
-import { HomeLegalLinks } from "@/components/layout/HomeLegalLinks";
+import { HomeLegalLinks, LegalLinksNav } from "@/components/layout/HomeLegalLinks";
 import { Button } from "@/components/ui/Button";
 import { ContactModal } from "@/components/ui/ContactModal";
 import { Magnetic } from "@/components/ui/Magnetic";
@@ -27,10 +27,29 @@ import {
 } from "framer-motion";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 function smoothstep(e: number) {
-  return e * e * (3 - 2 * e);
+  const t = Math.min(1, Math.max(0, e));
+  return t * t * (3 - 2 * t);
 }
+
+/** Soft critically-damped follow — smooths discrete scroll samples without mushy lag. */
+const CONTACT_SPRING = {
+  stiffness: 120,
+  damping: 32,
+  mass: 0.28,
+  restDelta: 0.0005,
+  restSpeed: 0.0005,
+} as const;
+
+const UI_SPRING = {
+  stiffness: 100,
+  damping: 30,
+  mass: 0.28,
+  restDelta: 0.0005,
+  restSpeed: 0.0005,
+} as const;
 
 function useFrameProgress(scrollYProgress: MotionValue<number>) {
   return useTransform(scrollYProgress, (p) => {
@@ -42,30 +61,35 @@ function useFrameProgress(scrollYProgress: MotionValue<number>) {
   });
 }
 
-function useContactMotion(uiProgress: MotionValue<number>, isMobile: boolean) {
-  const contactParallax = useTransform(uiProgress, (p) => {
+function useContactMotion(scrollProgress: MotionValue<number>, isMobile: boolean) {
+  // Single continuous ease across the handoff — avoids a mid-curve kink that reads as steps.
+  const contactParallaxRaw = useTransform(scrollProgress, (p) => {
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
-    const b = SCRUB_HANDOFF_START + 0.14;
     const tall = !isMobile && vh >= 900;
-    const from = (isMobile ? 0.36 : 0.42) * vh;
-    const mid = (isMobile ? 0.04 : tall ? -0.02 : 0.02) * vh;
-    const to = (isMobile ? -0.08 : tall ? -0.14 : -0.06) * vh;
+    const from = (isMobile ? 0.58 : 0.42) * vh;
+    const to = (isMobile ? 0 : tall ? -0.14 : -0.06) * vh;
     if (p <= a) return from;
     if (p >= 1) return to;
-    if (p <= b) {
-      const t = smoothstep((p - a) / (b - a));
-      return from + (mid - from) * t;
-    }
-    const t = smoothstep((p - b) / (1 - b));
-    return mid + (to - mid) * t;
+    const t = smoothstep((p - a) / (1 - a));
+    return from + (to - from) * t;
   });
-  const contactOpacity = useTransform(
-    uiProgress,
-    [SCRUB_HANDOFF_START, SCRUB_HANDOFF_START + 0.12, SCRUB_HANDOFF_START + 0.2, 1],
-    [0, 0.45, 1, 1],
+
+  const contactOpacityRaw = useTransform(scrollProgress, (p) => {
+    const a = SCRUB_HANDOFF_START;
+    const b = SCRUB_HANDOFF_START + 0.22;
+    if (p <= a) return 0;
+    if (p >= b) return 1;
+    return smoothstep((p - a) / (b - a));
+  });
+
+  // Spring the pixel/opacity outputs so discrete scroll samples interpolate between frames.
+  const contactParallax = useSpring(contactParallaxRaw, CONTACT_SPRING);
+  const contactOpacity = useSpring(contactOpacityRaw, CONTACT_SPRING);
+  const contactVisibility = useTransform(contactOpacity, (v) =>
+    v <= 0.01 ? "hidden" : "visible",
   );
-  return { contactParallax, contactOpacity };
+  return { contactParallax, contactOpacity, contactVisibility };
 }
 
 function HeroLogo() {
@@ -153,12 +177,12 @@ function MobileHeroBottomFade({
       SCRUB_HANDOFF_START + 0.18,
       1,
     ],
-    [0, 0.48, 0.7, 0.82, 0.88],
+    [0, 0.55, 0.82, 0.94, 1],
   );
 
   return (
     <motion.div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[70%] bg-gradient-to-t from-[#08090b] from-[28%] via-[#08090b]/60 via-[56%] to-transparent"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[88%] bg-gradient-to-t from-[#08090b] from-[42%] via-[#08090b]/85 via-[68%] to-transparent"
       style={{ opacity }}
       aria-hidden
     />
@@ -343,20 +367,36 @@ function HeroContactSection({
   isMobile,
   contactParallax,
   contactOpacity,
+  contactVisibility,
   onContactOpen,
 }: {
   isMobile: boolean;
   contactParallax: MotionValue<number>;
   contactOpacity: MotionValue<number>;
+  contactVisibility: MotionValue<"hidden" | "visible">;
   onContactOpen: () => void;
 }) {
   return (
     <motion.div
       id="contact"
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-h-[78dvh] flex-col justify-center px-5 pb-10 pt-4 md:max-h-[68dvh] md:justify-center md:px-6 md:pb-[min(10vh,5rem)] md:pt-0 lg:max-h-[72dvh] lg:pb-[min(14vh,7rem)] xl:pb-[min(16vh,8rem)]"
-      style={{ y: contactParallax, opacity: contactOpacity }}
+      className={cn(
+        "pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col px-5 opacity-0 will-change-transform transform-gpu",
+        isMobile
+          ? "inset-y-0 h-[100dvh] max-h-[100dvh] justify-start pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-0"
+          : "max-h-[68dvh] justify-center px-6 pb-[min(10vh,5rem)] pt-0 lg:max-h-[72dvh] lg:pb-[min(14vh,7rem)] xl:pb-[min(16vh,8rem)]",
+      )}
+      style={{
+        y: contactParallax,
+        opacity: contactOpacity,
+        visibility: contactVisibility,
+      }}
     >
-      <div className="pointer-events-auto relative mx-auto w-full max-w-3xl origin-center pb-1 text-center md:pb-2 xl:max-w-5xl xl:scale-[1.1]">
+      <div
+        className={cn(
+          "pointer-events-auto relative mx-auto w-full max-w-3xl origin-center text-center xl:max-w-5xl xl:scale-[1.1]",
+          isMobile ? "shrink-0 pt-[50dvh]" : "pb-1 md:pb-2",
+        )}
+      >
         <p className="text-[10.5pt] tracking-[0.28em] text-[#c4a574]/90 uppercase md:text-[13pt]">
           Begin
         </p>
@@ -420,6 +460,10 @@ function HeroContactSection({
           )}
         </div>
       </div>
+
+      {isMobile ? (
+        <LegalLinksNav className="pointer-events-auto mt-auto shrink-0 justify-center pb-0.5" />
+      ) : null}
     </motion.div>
   );
 }
@@ -445,7 +489,10 @@ function ScrollHeroMobile() {
 
   const uiProgress = scrollYProgress;
   const frameProgress = useFrameProgress(scrollYProgress);
-  const { contactParallax, contactOpacity } = useContactMotion(uiProgress, true);
+  const { contactParallax, contactOpacity, contactVisibility } = useContactMotion(
+    scrollYProgress,
+    true,
+  );
 
   return (
     <>
@@ -479,9 +526,9 @@ function ScrollHeroMobile() {
             isMobile
             contactParallax={contactParallax}
             contactOpacity={contactOpacity}
+            contactVisibility={contactVisibility}
             onContactOpen={openContact}
           />
-          <HomeLegalLinks opacity={contactOpacity} />
         </div>
       </section>
       <ContactModal open={contactOpen} onClose={closeContact} />
@@ -509,32 +556,20 @@ function ScrollHeroDesktop() {
     offset: ["start start", "end end"],
   });
 
-  const sprungProgress = useSpring(scrollYProgress, {
-    stiffness: 130,
-    damping: 28,
-    mass: 0.2,
-    restDelta: 0.00005,
-    restSpeed: 0.00005,
-  });
+  const sprungProgress = useSpring(scrollYProgress, UI_SPRING);
   const uiProgress = sprungProgress;
   const frameProgress = useFrameProgress(scrollYProgress);
 
-  const stickyLift = useTransform(scrollYProgress, (p) => {
+  // Same raw progress + spring as contact — keeps hero lift and contact slide locked.
+  const stickyLiftRaw = useTransform(scrollYProgress, (p) => {
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const a = SCRUB_HANDOFF_START;
-    const b = SCRUB_HANDOFF_START + 0.12;
     const endLift = -0.5 * vh;
-    const midLift = -0.28 * vh;
-
     if (p <= a) return 0;
     if (p >= 1) return endLift;
-    if (p <= b) {
-      const t = smoothstep((p - a) / (b - a));
-      return midLift * t;
-    }
-    const t = smoothstep((p - b) / (1 - b));
-    return midLift + (endLift - midLift) * t;
+    return endLift * smoothstep((p - a) / (1 - a));
   });
+  const stickyLift = useSpring(stickyLiftRaw, CONTACT_SPRING);
 
   const heroMask = useTransform(
     uiProgress,
@@ -555,7 +590,10 @@ function ScrollHeroDesktop() {
       "linear-gradient(to bottom, #000 0%, #000 28%, rgba(0,0,0,0.52) 48%, rgba(0,0,0,0.16) 66%, rgba(0,0,0,0.03) 84%, transparent 100%)",
     ],
   );
-  const { contactParallax, contactOpacity } = useContactMotion(uiProgress, false);
+  const { contactParallax, contactOpacity, contactVisibility } = useContactMotion(
+    scrollYProgress,
+    false,
+  );
 
   useMotionValueEvent(heroMask, "change", (mask) => {
     const el = heroFrameRef.current;
@@ -605,6 +643,7 @@ function ScrollHeroDesktop() {
             isMobile={false}
             contactParallax={contactParallax}
             contactOpacity={contactOpacity}
+            contactVisibility={contactVisibility}
             onContactOpen={openContact}
           />
           <HomeLegalLinks opacity={contactOpacity} />
